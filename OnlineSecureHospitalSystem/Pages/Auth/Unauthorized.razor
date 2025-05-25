@@ -1,0 +1,45 @@
+﻿@page "/unauthorized"
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject NavigationManager Navigation
+@inject AuthorizationService authorizationService
+@inject AccessControlService AccessControl
+
+<MudPaper Class="d-flex flex-column align-center justify-center mt-12 mx-auto px-6 py-8" Style="max-width: 500px;" Elevation="4">
+    <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Large" />
+    <MudText Typo="Typo.h4" Class="mt-2 mb-1" Color="Color.Error">Unauthorized</MudText>
+    <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mb-4">
+        You do not have permission to access this page.
+    </MudText>
+    @if (_userLoaded && authorizationService.CurrentUser != null)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@GoHome">
+            Go to Home
+        </MudButton>
+    }
+    else if (_userLoaded)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@GoLogin">
+            Login
+        </MudButton>
+    }
+</MudPaper>
+
+@code {
+    private bool _userLoaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await authorizationService.LoadUserAsync();
+        _userLoaded = true;
+    }
+
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/home");
+    }
+
+    private void GoLogin()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,9 @@
+﻿.custom-nav-link {
+    color: white;
+    --mud-icon-color: white;
+}
+
+.custom-nav-link.mud-nav-link-active {
+        background-color: #1976d2 !important;
+        color: white !important;
+}

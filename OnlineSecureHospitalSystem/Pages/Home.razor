@@ -1,0 +1,12 @@
+﻿@page "/home"
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject AuthorizationService authorizationService
+@inject NavigationManager Navigation
+@inject AccessControlService AccessControl
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null);
+    }
+}

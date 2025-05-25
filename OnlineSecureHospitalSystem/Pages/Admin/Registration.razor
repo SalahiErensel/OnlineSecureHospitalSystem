@@ -1,0 +1,103 @@
+﻿@page "/admin/register-user"
+@using OnlineSecureHospitalSystem.Services.Authentication
+@using OnlineSecureHospitalSystem.Data.Models
+@using System.ComponentModel.DataAnnotations
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager Navigation
+@inject AuthorizationService authorizationService
+
+@inject AccessControlService AccessControl
+
+<div class="d-flex justify-center align-center" style="min-height: 100vh;">
+    <MudPaper Class="pa-6 mx-4" Style="width: 100%; max-width: 600px;" Elevation="4">
+        <MudText Typo="Typo.h4" Class="mb-4" Style="text-align: center;">Register User</MudText>
+
+        <EditForm Model="newUser" OnValidSubmit="RegisterUser">
+            <DataAnnotationsValidator />
+
+            <MudTextField @bind-Value="newUser.Username"
+                          Label="Username"
+                          Required="true"
+                          For="@(() => newUser.Username)"
+                          Class="mb-4" />
+
+            <MudSelect T="int"
+                       @bind-Value="newUser.Role_ID"
+                       Required="true"
+                       Class="mb-4 mt-3">
+                <MudSelectItem Value="0">Select a Role</MudSelectItem>
+                @foreach (var role in roles)
+                {
+                    <MudSelectItem Value="@role.Role_ID">@role.Role_Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            <div class="d-flex justify-center mt-4">
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary">
+                    Register
+                </MudButton>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <MudAlert Severity="@(messageColor == Color.Success ? Severity.Success : Severity.Error)"
+                          Class="mt-3"
+                          Variant="Variant.Filled">
+                    @message
+                </MudAlert>
+            }
+        </EditForm>
+    </MudPaper>
+</div>
+
+@code {
+    private Users newUser = new();
+    private List<Roles> roles = new();
+    private string message = string.Empty;
+    private Color messageColor = Color.Default;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: new[] { "Admin" });
+
+        roles = await AuthenticationService.GetRolesAsync();
+
+        newUser.Role_ID = 0;
+    }
+    private async Task RegisterUser()
+    {
+        if (newUser.Role_ID == 0)
+        {
+            message = "Please select a role!";
+            messageColor = Color.Error;
+            return;
+        }
+
+        var result = await AuthenticationService.RegisterUserAsync(newUser);
+
+        if (result)
+        {
+            message = "User registered successfully.";
+            messageColor = Color.Success;
+            newUser = new Users();
+            newUser.Role_ID = 0;
+            StateHasChanged();
+            await ClearMessages();
+        }
+        else
+        {
+            message = "Username already exists.";
+            messageColor = Color.Error;
+        }
+    }
+
+    private async Task ClearMessages()
+    {
+        await Task.Delay(4000);
+        message = string.Empty;
+        StateHasChanged();
+    }
+}

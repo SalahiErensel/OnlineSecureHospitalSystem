@@ -1,0 +1,94 @@
+﻿@page "/"
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.Authentication
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject IAuthenticationService AuthenticationService
+@inject NavigationManager navigationManager
+@inject AuthorizationService authorizationService
+@inject AccessControlService accessControlService
+
+<div class="d-flex justify-center align-center" style="min-height: 100vh;">
+    <MudPaper Class="pa-6 mx-4" Style="width: 100%; max-width: 600px;" Elevation="4">
+        <div class="d-flex justify-center mb-4">
+            <img src="assets/hospital_image.jpg" alt="Hospital" style="max-width: 100%; height: auto; border-radius: 8px;" />
+        </div>
+        <MudText Typo="Typo.h4" Class="mb-4" Style="text-align: center;">Welcome</MudText>
+
+        <EditForm Model="loginUser" OnValidSubmit="LoginUser">
+            <DataAnnotationsValidator />
+
+            <MudTextField @bind-Value="loginUser.Username"
+                          Label="Username"
+                          Required="true"
+                          For="@(() => loginUser.Username)"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="loginUser.Password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Required="true"
+                          For="@(() => loginUser.Password)"
+                          Class="mb-4" />
+
+
+
+            <div class="d-flex justify-center mt-4">
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary">
+                    Login
+                </MudButton>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <MudAlert Severity="@(messageColor == Color.Success ? Severity.Success : Severity.Error)"
+                          Class="mt-3"
+                          Variant="Variant.Filled">
+                    @message
+                </MudAlert>
+            }
+        </EditForm>
+    </MudPaper>
+</div>
+
+@code {
+    private Users loginUser = new();
+    private string message = string.Empty;
+    private Color messageColor = Color.Default;
+    private bool _cleared = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_cleared)
+        {
+            _cleared = true;
+            await authorizationService.ClearUserAsync();
+            StateHasChanged();
+        }
+    }
+    private async Task LoginUser()
+    {
+        var authUser = await AuthenticationService.LoginUserAsync(loginUser);
+        if (authUser != null)
+        {
+            message = "Successfully Logged In!";
+            messageColor = Color.Success;
+            await authorizationService.SetUserAsync(authUser);
+
+            await Task.Delay(1000); 
+
+            await accessControlService.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null);
+
+            if (authUser.IsDefaultPassword != 1)
+            {
+                navigationManager.NavigateTo("/home");
+            }
+        }
+        else
+        {
+            message = "Wrong username or password!";
+            messageColor = Color.Error;
+        }
+    }
+}

@@ -1,0 +1,74 @@
+﻿@using OnlineSecureHospitalSystem.Services.Authorization
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject AuthorizationService authorizationService
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    @if (!IsLoginPage && !IsDefaultPasswordUser)
+    {
+        <MudDrawer @bind-Open="_drawerOpen"
+                   Variant="DrawerVariant.Responsive" Elevation="4" Color="Color.Primary" Breakpoint="Breakpoint.Md">
+            <MudNavMenu>
+                <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                    Home
+                </MudNavLink>
+                @if (authorizationService.IsInRole("Admin"))
+                {
+                    <MudNavLink Href="/admin/register-user" Icon="@Icons.Material.Filled.PersonAdd" Match="NavLinkMatch.All">
+                        Register User
+                    </MudNavLink>
+                }
+                @if (authorizationService.IsInRole("Receptionist"))
+                {
+                    <MudNavLink Href="/register-patient" Icon="@Icons.Material.Filled.PersonAdd" Match="NavLinkMatch.All">
+                        Register Patient
+                    </MudNavLink>
+                }
+                <MudNavLink Href="/" Icon="@Icons.Material.Filled.Logout" Match="NavLinkMatch.All">
+                    Logout
+                </MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+    }
+
+    <MudAppBar Color="Color.Primary" Fixed="true">
+        @if (!IsLoginPage && !IsDefaultPasswordUser)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" Class="mud-md-down-inline" />
+        }
+        <MudText Typo="Typo.h6" Class="ml-2">Online Secure Hospital System</MudText>
+
+        <MudSpacer />
+
+        @if (!IsLoginPage && authorizationService.CurrentUser != null)
+        {
+            <MudText Typo="Typo.h6" Class="mr-4">Welcome, @authorizationService.CurrentUser.Username</MudText>
+        }
+    </MudAppBar>
+
+    <MudMainContent Class="pt-16 px-4 px-md-16">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = false;
+    private bool _userLoaded = false;
+    private bool _initialized = false;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private bool IsLoginPage =>
+        Navigation.Uri.EndsWith("/");
+
+    private bool IsDefaultPasswordUser =>
+    authorizationService.CurrentUser?.IsDefaultPassword == 1;
+}

@@ -1,0 +1,13 @@
+﻿@page "/register-patient"
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject NavigationManager Navigation
+@inject AuthorizationService authorizationService
+@inject AccessControlService AccessControl
+
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: new[] { "Receptionist" });
+    }
+}
