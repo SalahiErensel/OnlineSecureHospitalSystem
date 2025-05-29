@@ -1,13 +1,117 @@
 ﻿@page "/register-patient"
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.Authentication
 @using OnlineSecureHospitalSystem.Services.Authorization
 @inject NavigationManager Navigation
 @inject AuthorizationService authorizationService
 @inject AccessControlService AccessControl
+@inject IAuthenticationService AuthenticationService
 
+<div class="d-flex justify-center align-center" style="min-height: 100vh;">
+    <MudPaper Class="pa-6 mx-4" Style="width: 100%; max-width: 600px;" Elevation="4">
+        <MudText Typo="Typo.h4" Class="mb-4" Style="text-align: center;">Register Patient</MudText>
+
+        <EditForm Model="newPatient" OnValidSubmit="RegisterPatientAsync">
+            <DataAnnotationsValidator />
+
+            <MudTextField @bind-Value="newPatient.Username"
+                          Label="Username"
+                          Required="true"
+                          For="@(() => newPatient.Username)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newPatient.First_Name"
+                          Label="Firstname"
+                          Required="true"
+                          For="@(() => newPatient.First_Name)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newPatient.Last_Name"
+                          Label="Lastname"
+                          Required="true"
+                          For="@(() => newPatient.Last_Name)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newPatient.Phone_Number"
+                          Label="Phone Number"
+                          Required="true"
+                          For="@(() => newPatient.Phone_Number)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newPatient.Email"
+                          Label="Email"
+                          Required="true"
+                          For="@(() => newPatient.Email)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newPatient.Address"
+                          Label="Address"
+                          Required="true"
+                          For="@(() => newPatient.Address)"
+                          Class="mb-4" />
+            <MudDatePicker @bind-Date="newPatient.DOB"
+                           Label="Date of Birth"
+                           Required="true"
+                           For="@(() => newPatient.DOB)"
+                           Class="mb-4" />
+            <div class="d-flex justify-center mt-4">
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary">
+                    Register Patient
+                </MudButton>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <MudAlert Severity="@(messageColor == Color.Success ? Severity.Success : Severity.Error)"
+                          Class="mt-3"
+                          Variant="Variant.Filled">
+                    @message
+                </MudAlert>
+            }
+        </EditForm>
+    </MudPaper>
+</div>
 
 @code {
+    private RegisterPatientDTO newPatient = new();
+    private string message = string.Empty;
+    private Color messageColor = Color.Default;
+
     protected override async Task OnInitializedAsync()
     {
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: new[] { "Receptionist" });
+    }
+
+    private async Task RegisterPatientAsync()
+    {
+        try
+        {
+            var result = await AuthenticationService.RegisterPatientAsync(newPatient);
+
+            if (result)
+            {
+                message = "Patient registered successfully.";
+                messageColor = Color.Success;
+                newPatient = new RegisterPatientDTO();
+                StateHasChanged();
+                await ClearMessages();
+            }
+            else
+            {
+                message = "Username already exists.";
+                messageColor = Color.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: {ex.Message}";
+            messageColor = Color.Error;
+            return;
+        }
+    }
+
+    private async Task ClearMessages()
+    {
+        await Task.Delay(4000);
+        message = string.Empty;
+        StateHasChanged();
     }
 }

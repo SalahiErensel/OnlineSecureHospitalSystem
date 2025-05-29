@@ -1,0 +1,217 @@
+﻿@page "/profile"
+@inject IAuthenticationService authenticationService
+@inject AuthorizationService authorizationService
+@inject AccessControlService AccessControl
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using MudBlazor
+@using OnlineSecureHospitalSystem.Services.Authentication
+@using OnlineSecureHospitalSystem.Services.Authorization
+@using OnlineSecureHospitalSystem.Services.Profile
+@inject ISnackbar Snackbar
+@inject IProfileService profileService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudGrid>
+        <!-- Personal Information Card -->
+        <MudItem xs="12" md="8" Class="mx-auto">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Personal Information</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIconButton Icon="@(isEditing? Icons.Material.Filled.Save : Icons.Material.Filled.Edit)"
+                                       Color="Color.Primary"
+                                       OnClick="ToggleEdit" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudForm @ref="form" Model="updateProfileDTO">
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.First_Name"
+                                              Label="First Name"
+                                              Variant="Variant.Outlined"
+                                              ReadOnly="!isEditing"
+                                              Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.Last_Name"
+                                              Label="Last Name"
+                                              Variant="Variant.Outlined"
+                                              ReadOnly="!isEditing"
+                                              Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.Email"
+                                              Label="Email"
+                                              Variant="Variant.Outlined"
+                                              InputType="InputType.Email"
+                                              ReadOnly="!isEditing"
+                                              Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.Phone_Number"
+                                              Label="Phone Number"
+                                              Variant="Variant.Outlined"
+                                              ReadOnly="!isEditing" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.Password"
+                                              Label="Password"
+                                              Variant="Variant.Outlined"
+                                              InputType="InputType.Password"
+                                              ReadOnly="!isEditing" />
+                            </MudItem>
+                            @if (isPatient)
+                            {
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="patientAge"
+                                                  Label="Age"
+                                                  Variant="Variant.Outlined"
+                                                  ReadOnly="true" 
+                                                  Disabled="true"/>
+                                </MudItem>
+                            }
+                            @if (isDoctor)
+                            {
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="updateProfileDTO.Specialization"
+                                                  Label="Specialization"
+                                                  Variant="Variant.Outlined"
+                                                  ReadOnly="!isEditing" />
+                                </MudItem>
+                            }
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="updateProfileDTO.Address"
+                                              Label="Address"
+                                              Variant="Variant.Outlined"
+                                              ReadOnly="!isEditing" />
+                            </MudItem>
+
+                        </MudGrid>
+                    </MudForm>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudForm form;
+    private bool isEditing = false;
+    private AuthenticatedUser authenticatedUser = new();
+    private Users currentUser = new();
+    private int patientAge = 0;
+    private string specialization = string.Empty;
+    private bool isDoctor;
+    private bool isPatient;
+    private UpdateProfileDTO updateProfileDTO = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null);
+        authenticatedUser = authorizationService!.CurrentUser!;
+        currentUser = await authenticationService.GetUserByIdAsync(authenticatedUser!.User_ID!);
+
+        if (currentUser!.Role_ID == 6)
+        {
+            isPatient = true;
+            patientAge = await CalculateAge(currentUser!.User_ID);
+        }
+        ;
+        if (currentUser.Role_ID == 3 || currentUser.Role_ID == 4 || currentUser.Role_ID == 5)
+        {
+            isDoctor = true;
+            updateProfileDTO.Specialization = await profileService.GetDoctorSpecializationAsync(currentUser.User_ID);
+        }
+
+        updateProfileDTO.First_Name = currentUser.First_Name;
+        updateProfileDTO.Last_Name = currentUser.Last_Name;
+        updateProfileDTO.Email = currentUser.Email;
+        updateProfileDTO.Phone_Number = currentUser.Phone_Number;
+        updateProfileDTO.Address = currentUser.Address;
+        updateProfileDTO.User_ID = currentUser.User_ID;
+    }
+    private async Task<int> CalculateAge(int userId)
+    {
+        //Get patient DOB by userId
+        var dob = await profileService.GetPatientDOBAsync(userId);
+
+        var today = DateTime.Today;
+
+        var age = today.Year - dob.Year;
+
+        if (dob.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    private async Task ToggleEdit()
+    {
+        if (isEditing)
+        {
+            //Save changes
+            await form.Validate();
+            if (form.IsValid)
+            {
+                await SaveProfileAsync();
+                isEditing = false;
+                Snackbar.Add("Profile updated successfully!", Severity.Success);
+            }
+        }
+        else
+        {
+            isEditing = true;
+        }
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        try
+        {
+            if(updateProfileDTO.Password != null)
+            {
+                ValidatePassword(updateProfileDTO.Password);
+
+                if (!string.IsNullOrEmpty(ValidatePassword(updateProfileDTO.Password)))
+                {
+                    Snackbar.Add("Password validation failed: " + ValidatePassword(updateProfileDTO.Password), Severity.Error);
+                    return;
+                }
+            }
+
+            var result = await profileService.UpdateProfileAsync(updateProfileDTO);
+
+            if(!result)
+            {
+                Snackbar.Add($"Error updating profile!", Severity.Error);
+            }
+        }
+
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating profile: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private string ValidatePassword(string password)
+    {
+        string validationError = string.Empty;
+
+        if (string.IsNullOrEmpty(password) || password.Length < 8)
+        {
+            validationError = "Password must be at least 8 characters long.";
+        }
+        if (!password.Any(char.IsUpper) || !password.Any(char.IsLower) || !password.Any(char.IsDigit))
+        {
+            validationError = "Password must contain at least one uppercase letter, one lowercase letter, and one digit.";
+        }
+
+        return validationError;
+    }
+}

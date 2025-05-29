@@ -6,6 +6,7 @@ using OnlineSecureHospitalSystem.Data;
 using OnlineSecureHospitalSystem.Data.Models;
 using OnlineSecureHospitalSystem.Services.Authentication;
 using OnlineSecureHospitalSystem.Services.Authorization;
+using OnlineSecureHospitalSystem.Services.Profile;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,7 @@ builder.Services.AddScoped<AuthorizationService>();
 builder.Services.AddScoped<IPasswordHasher<Users>, PasswordHasher<Users>>();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<AccessControlService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>

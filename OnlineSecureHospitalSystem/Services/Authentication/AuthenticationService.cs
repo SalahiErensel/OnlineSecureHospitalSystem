@@ -122,7 +122,7 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
         {
             try
             {
-                // Get the user from database
+                //Get the user from database
                 var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.User_ID == userId);
                 if (user == null)
                 {
@@ -142,6 +142,53 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
             {
                 return false;
             }
+        }
+
+        public async Task<bool> RegisterPatientAsync(RegisterPatientDTO registerPatient)
+        {
+            //Check if username is already taken
+            if (await _appDbContext.Users.AnyAsync(x => x.Username == registerPatient.Username))
+            {
+                return false;
+            }
+
+            var newUser = new Users
+            {
+                Address = registerPatient.Address,
+                Email = registerPatient.Email,
+                First_Name = registerPatient.First_Name,
+                Last_Name = registerPatient.Last_Name,
+                Password = "123456",
+                Phone_Number = registerPatient.Phone_Number,
+                Username = registerPatient.Username,
+                IsDefaultPassword = 1,
+                Role_ID = 6
+            };
+
+            //Hash the password
+            newUser.Password = _passwordHasher.HashPassword(newUser, newUser.Password);
+
+            //Save the user to the database
+            _appDbContext.Users.Add(newUser);
+            await _appDbContext.SaveChangesAsync();
+
+            //Create and save the Patients record
+            var patient = new Patients
+            {
+                User_ID = newUser.User_ID,
+                DOB = registerPatient.DOB
+            };
+
+            _appDbContext.Patients.Add(patient);
+            await _appDbContext.SaveChangesAsync();
+
+            return true;
+        }
+        public async Task<Users?> GetUserByIdAsync(int userId)
+        {
+            return await _appDbContext.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.User_ID == userId);
         }
     }
 }

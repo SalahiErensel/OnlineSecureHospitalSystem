@@ -9,5 +9,7 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
         Task<bool> RegisterUserAsync(Users user, string? specialization, DateTime? dob);
         Task<AuthenticatedUser?> LoginUserAsync(LoginDTO loginDTO);
         Task<bool> UpdatePasswordAsync(int userId, string newPassword);
+        Task<bool> RegisterPatientAsync(RegisterPatientDTO registerPatient);
+        Task<Users?> GetUserByIdAsync(int userId);
     }
 }
