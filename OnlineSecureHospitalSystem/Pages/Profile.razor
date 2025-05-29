@@ -62,7 +62,8 @@
                                               Label="Password"
                                               Variant="Variant.Outlined"
                                               InputType="InputType.Password"
-                                              ReadOnly="!isEditing" />
+                                              ReadOnly="!isEditing"
+                                              Required="true" />
                             </MudItem>
                             @if (isPatient)
                             {
@@ -87,7 +88,8 @@
                                 <MudTextField @bind-Value="updateProfileDTO.Address"
                                               Label="Address"
                                               Variant="Variant.Outlined"
-                                              ReadOnly="!isEditing" />
+                                              ReadOnly="!isEditing"
+                                              Required="true" />
                             </MudItem>
 
                         </MudGrid>
