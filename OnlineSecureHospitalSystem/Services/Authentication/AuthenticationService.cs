@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OnlineSecureHospitalSystem.Data;
+using OnlineSecureHospitalSystem.Data.DTO;
 using OnlineSecureHospitalSystem.Data.Models;
 
 namespace OnlineSecureHospitalSystem.Services.Authentication
@@ -22,7 +23,7 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
             return await _appDbContext.Roles.ToListAsync();
         }
 
-        public async Task<bool> RegisterUserAsync(Users user)
+        public async Task<bool> RegisterUserAsync(Users user, string? specialization, DateTime? dob)
         {
             //Check if username is already used or not
             if (await _appDbContext.Users.AnyAsync(x => x.Username == user.Username))
@@ -32,10 +33,15 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
 
             var newUser = new Users
             {
+                Address = user.Address,
+                First_Name = user.First_Name,
+                Last_Name = user.Last_Name,
+                Phone_Number = user.Phone_Number,
+                Email = user.Email,
+                Password = "123456", //This will be hashed later
                 Username = user.Username,
-                Role_ID = user.Role_ID,
                 IsDefaultPassword = 1,
-                Password = "123456",
+                Role_ID = user.Role_ID
             };
 
             //Hashing password
@@ -43,21 +49,60 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
 
             //Saving to database
             _appDbContext.Users.Add(newUser);
+
+            await _appDbContext.SaveChangesAsync();
+
+            if (new[] { 3, 4, 5 }.Contains(user.Role_ID))
+            {
+                int isChiefDoctor = user.Role_ID == 3 ? 1 : 0;
+
+                var doctor = new Doctors
+                {
+                    User_ID = newUser.User_ID,
+                    Is_Chief = isChiefDoctor,
+                    Specialization = specialization,
+                };
+
+                _appDbContext.Doctors.Add(doctor);
+            }
+
+            if (new[] { 6 }.Contains(user.Role_ID))
+            {
+                var patient = new Patients
+                {
+                    User_ID = newUser.User_ID,
+                    DOB = dob,
+                };
+                _appDbContext.Patients.Add(patient);
+            }
+
             await _appDbContext.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<AuthenticatedUser?> LoginUserAsync(Users user)
+        public async Task<AuthenticatedUser?> LoginUserAsync(LoginDTO loginDTO)
         {
-            var existingUser = await _appDbContext.Users.Include(u => u.Role).FirstOrDefaultAsync(x => x.Username == user.Username);
+            var existingUser = await _appDbContext.Users.Include(u => u.Role).FirstOrDefaultAsync(x => x.Username == loginDTO.Username);
 
             if (existingUser == null)
             {
                 return null;
             }
 
-            var result = _passwordHasher.VerifyHashedPassword(existingUser, existingUser.Password!, user.Password!);
+            if(existingUser.User_ID == 1)
+            {
+                //If the user is the default admin, return immediately
+                return new AuthenticatedUser
+                {
+                    User_ID = existingUser.User_ID,
+                    Username = existingUser.Username!,
+                    RoleName = existingUser.Role!.Role_Name!,
+                    IsDefaultPassword = existingUser.IsDefaultPassword!.Value,
+                };
+            }
+
+            var result = _passwordHasher.VerifyHashedPassword(existingUser, existingUser.Password!, loginDTO.Password!);
 
             if (result == PasswordVerificationResult.Success)
             {
@@ -71,6 +116,32 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
             }
 
             return null;
+        }
+
+        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+        {
+            try
+            {
+                // Get the user from database
+                var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.User_ID == userId);
+                if (user == null)
+                {
+                    return false;
+                }
+
+                //Hash the new password and update
+                user.Password = _passwordHasher.HashPassword(user, newPassword);
+                user.IsDefaultPassword = 0; //Mark as no longer default password
+
+                _appDbContext.Users.Update(user);
+                await _appDbContext.SaveChangesAsync();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

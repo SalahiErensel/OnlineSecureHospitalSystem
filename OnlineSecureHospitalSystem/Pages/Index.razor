@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using OnlineSecureHospitalSystem.Data.DTO
 @using OnlineSecureHospitalSystem.Data.Models
 @using OnlineSecureHospitalSystem.Services.Authentication
 @using OnlineSecureHospitalSystem.Services.Authorization
@@ -20,18 +21,15 @@
             <MudTextField @bind-Value="loginUser.Username"
                           Label="Username"
                           Required="true"
-                          For="@(() => loginUser.Username)"
-                          Class="mb-4" />
+                          Class="mb-4"
+                          For="@(() => loginUser.Username)" />
 
             <MudTextField @bind-Value="loginUser.Password"
                           Label="Password"
                           InputType="InputType.Password"
                           Required="true"
-                          For="@(() => loginUser.Password)"
-                          Class="mb-4" />
-
-
-
+                          Class="mb-4" 
+                          For="@(() => loginUser.Password)" />
             <div class="d-flex justify-center mt-4">
                 <MudButton ButtonType="ButtonType.Submit"
                            Variant="Variant.Filled"
@@ -53,7 +51,7 @@
 </div>
 
 @code {
-    private Users loginUser = new();
+    private LoginDTO loginUser = new LoginDTO();
     private string message = string.Empty;
     private Color messageColor = Color.Default;
     private bool _cleared = false;
@@ -69,26 +67,36 @@
     }
     private async Task LoginUser()
     {
-        var authUser = await AuthenticationService.LoginUserAsync(loginUser);
-        if (authUser != null)
+        try
         {
-            message = "Successfully Logged In!";
-            messageColor = Color.Success;
-            await authorizationService.SetUserAsync(authUser);
+            var authUser = await AuthenticationService.LoginUserAsync(loginUser);
 
-            await Task.Delay(1000); 
-
-            await accessControlService.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null);
-
-            if (authUser.IsDefaultPassword != 1)
+            if (authUser != null)
             {
-                navigationManager.NavigateTo("/home");
+                message = "Successfully Logged In!";
+                messageColor = Color.Success;
+                await authorizationService.SetUserAsync(authUser);
+
+                await Task.Delay(1000);
+
+                await accessControlService.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null!);
+
+                if (authUser.IsDefaultPassword != 1)
+                {
+                    navigationManager.NavigateTo("/home");
+                }
+            }
+            else
+            {
+                message = "Wrong username or password!";
+                messageColor = Color.Error;
             }
         }
-        else
+        catch (Exception ex)
         {
-            message = "Wrong username or password!";
+            message = "Something went wrong! " + ex.Message;
             messageColor = Color.Error;
         }
+
     }
 }

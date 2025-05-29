@@ -9,8 +9,8 @@ namespace OnlineSecureHospitalSystem.Data.Models
         public int Doctor_ID { get; set; }
         [ForeignKey(nameof(User))]
         public int User_ID { get; set; }
+        public string? Specialization { get; set; }
         public int Is_Chief { get; set; }
-        public string? Expertise { get; set; }
         public Users? User { get; set; }
     }
 }

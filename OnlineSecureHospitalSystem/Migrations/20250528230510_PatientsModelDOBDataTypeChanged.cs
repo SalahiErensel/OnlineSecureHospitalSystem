@@ -5,13 +5,32 @@
 namespace OnlineSecureHospitalSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class UserPasswordIsDefaultAdded : Migration
+    public partial class PatientsModelDOBDataTypeChanged : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "Username",
+                name: "Password",
+                table: "Users",
+                type: "TEXT",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "TEXT");
+
+            migrationBuilder.UpdateData(
+                table: "Users",
+                keyColumn: "User_ID",
+                keyValue: 1,
+                column: "DOB",
+                value: null);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AlterColumn<string>(
+                name: "Password",
                 table: "Users",
                 type: "TEXT",
                 nullable: false,
@@ -20,28 +39,12 @@ namespace OnlineSecureHospitalSystem.Migrations
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AddColumn<int>(
-                name: "IsDefaultPassword",
+            migrationBuilder.UpdateData(
                 table: "Users",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: 0);
-        }
-
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "IsDefaultPassword",
-                table: "Users");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Username",
-                table: "Users",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+                keyColumn: "User_ID",
+                keyValue: 1,
+                column: "DOB",
+                value: null);
         }
     }
 }

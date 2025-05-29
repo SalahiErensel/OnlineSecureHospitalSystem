@@ -15,13 +15,37 @@
 
         <EditForm Model="newUser" OnValidSubmit="RegisterUser">
             <DataAnnotationsValidator />
-
+            
             <MudTextField @bind-Value="newUser.Username"
                           Label="Username"
                           Required="true"
                           For="@(() => newUser.Username)"
                           Class="mb-4" />
-
+            <MudTextField @bind-Value="newUser.First_Name"
+                          Label="Firstname"
+                          Required="true"
+                          For="@(() => newUser.First_Name)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newUser.Last_Name"
+                          Label="Lastname"
+                          Required="true"
+                          For="@(() => newUser.Last_Name)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newUser.Phone_Number"
+                          Label="Phone Number"
+                          Required="true"
+                          For="@(() => newUser.Phone_Number)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newUser.Email"
+                          Label="Email"
+                          Required="true"
+                          For="@(() => newUser.Email)"
+                          Class="mb-4" />
+            <MudTextField @bind-Value="newUser.Address"
+                          Label="Address"
+                          Required="true"
+                          For="@(() => newUser.Address)"
+                          Class="mb-4" />
             <MudSelect T="int"
                        @bind-Value="newUser.Role_ID"
                        Required="true"
@@ -32,7 +56,20 @@
                     <MudSelectItem Value="@role.Role_ID">@role.Role_Name</MudSelectItem>
                 }
             </MudSelect>
-
+            @if (IsDoctorRole)
+            {
+                <MudTextField @bind-Value="specialization"
+                              Label="Specialization"
+                              Required="true"
+                              Class="mb-4" />
+            }
+            @if (IsPatientRole)
+            {
+                <MudDatePicker @bind-Date="dob"
+                               Label="Date of Birth"
+                               Required="true"
+                               Class="mb-4" />
+            }
             <div class="d-flex justify-center mt-4">
                 <MudButton ButtonType="ButtonType.Submit"
                            Variant="Variant.Filled"
@@ -58,6 +95,8 @@
     private List<Roles> roles = new();
     private string message = string.Empty;
     private Color messageColor = Color.Default;
+    private string specialization = string.Empty;
+    private DateTime? dob = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,35 +108,49 @@
     }
     private async Task RegisterUser()
     {
-        if (newUser.Role_ID == 0)
+        try
         {
-            message = "Please select a role!";
-            messageColor = Color.Error;
-            return;
+            if (newUser.Role_ID == 0)
+            {
+                message = "Please select a role!";
+                messageColor = Color.Error;
+                return;
+            }
+
+            var result = await AuthenticationService.RegisterUserAsync(newUser, specialization, dob);
+
+            if (result)
+            {
+                message = "User registered successfully.";
+                messageColor = Color.Success;
+                newUser = new Users();
+                newUser.Role_ID = 0;
+                StateHasChanged();
+                await ClearMessages();
+            }
+            else
+            {
+                message = "Username already exists.";
+                messageColor = Color.Error;
+            }
         }
-
-        var result = await AuthenticationService.RegisterUserAsync(newUser);
-
-        if (result)
+        catch (Exception ex)
         {
-            message = "User registered successfully.";
-            messageColor = Color.Success;
-            newUser = new Users();
-            newUser.Role_ID = 0;
+            message = $"An error occurred: {ex.Message}";
+            messageColor = Color.Error;
+        }
+        finally
+        {
             StateHasChanged();
-            await ClearMessages();
-        }
-        else
-        {
-            message = "Username already exists.";
-            messageColor = Color.Error;
         }
     }
-
     private async Task ClearMessages()
     {
         await Task.Delay(4000);
         message = string.Empty;
         StateHasChanged();
     }
+
+    private bool IsDoctorRole => new[] { 3, 4, 5 }.Contains(newUser.Role_ID);
+    private bool IsPatientRole => newUser.Role_ID == 6;
 }

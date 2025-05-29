@@ -1,4 +1,4 @@
-﻿namespace OnlineSecureHospitalSystem.Data.Models
+﻿namespace OnlineSecureHospitalSystem.Data.DTO
 {
     public class AuthenticatedUser
     {

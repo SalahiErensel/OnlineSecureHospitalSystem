@@ -7,6 +7,6 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null);
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: null!);
     }
 }

@@ -1,12 +1,13 @@
-﻿using OnlineSecureHospitalSystem.Data.Models;
+﻿using OnlineSecureHospitalSystem.Data.DTO;
+using OnlineSecureHospitalSystem.Data.Models;
 
 namespace OnlineSecureHospitalSystem.Services.Authentication
 {
     public interface IAuthenticationService
     {
         Task<List<Roles>> GetRolesAsync();
-        Task<bool> RegisterUserAsync(Users user);
-
-        Task<AuthenticatedUser?> LoginUserAsync(Users user);
+        Task<bool> RegisterUserAsync(Users user, string? specialization, DateTime? dob);
+        Task<AuthenticatedUser?> LoginUserAsync(LoginDTO loginDTO);
+        Task<bool> UpdatePasswordAsync(int userId, string newPassword);
     }
 }

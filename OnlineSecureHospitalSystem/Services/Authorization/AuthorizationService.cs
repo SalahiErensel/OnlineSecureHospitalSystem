@@ -1,5 +1,5 @@
 ﻿using Blazored.LocalStorage;
-using OnlineSecureHospitalSystem.Data.Models;
+using OnlineSecureHospitalSystem.Data.DTO;
 
 namespace OnlineSecureHospitalSystem.Services.Authorization
 {

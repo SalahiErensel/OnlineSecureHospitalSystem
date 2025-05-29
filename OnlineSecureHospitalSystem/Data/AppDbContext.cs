@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using OnlineSecureHospitalSystem.Data.Models;
 
 namespace OnlineSecureHospitalSystem.Data
@@ -34,6 +35,20 @@ namespace OnlineSecureHospitalSystem.Data
                 new Roles { Role_ID = 5, Role_Name = "Consulting Doctor" },
                 new Roles { Role_ID = 6, Role_Name = "Patient" }
             );
+
+            modelBuilder.Entity<Users>().HasData(new Users
+            {
+                User_ID = 1,
+                Username = "salahiadmin",
+                Password = "123456",
+                First_Name = "Admin",
+                Last_Name = "Admin",
+                Phone_Number = "5338500968",
+                Address = "Kyrenia",
+                Email = "salahi_erensel@hotmail.com",
+                IsDefaultPassword = 1,
+                Role_ID = 1
+            });
         }
     }
 }

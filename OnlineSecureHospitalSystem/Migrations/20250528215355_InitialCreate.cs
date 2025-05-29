@@ -3,21 +3,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace OnlineSecureHospitalSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class AllTablesCreated : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<string>(
-                name: "Role_Name",
-                table: "Roles",
-                type: "TEXT",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Role_ID = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Role_Name = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Role_ID);
+                });
 
             migrationBuilder.CreateTable(
                 name: "Users",
@@ -25,8 +32,14 @@ namespace OnlineSecureHospitalSystem.Migrations
                 {
                     User_ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Username = table.Column<string>(type: "TEXT", nullable: true),
-                    Password = table.Column<string>(type: "TEXT", nullable: true),
+                    Username = table.Column<string>(type: "TEXT", nullable: false),
+                    Password = table.Column<string>(type: "TEXT", nullable: false),
+                    First_Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Last_Name = table.Column<string>(type: "TEXT", nullable: true),
+                    Phone_Number = table.Column<string>(type: "TEXT", nullable: true),
+                    Email = table.Column<string>(type: "TEXT", nullable: true),
+                    Address = table.Column<string>(type: "TEXT", nullable: true),
+                    IsDefaultPassword = table.Column<int>(type: "INTEGER", nullable: true),
                     Role_ID = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -47,8 +60,8 @@ namespace OnlineSecureHospitalSystem.Migrations
                     Doctor_ID = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     User_ID = table.Column<int>(type: "INTEGER", nullable: false),
-                    Is_Chief = table.Column<int>(type: "INTEGER", nullable: false),
-                    Expertise = table.Column<string>(type: "TEXT", nullable: true)
+                    Specialization = table.Column<string>(type: "TEXT", nullable: true),
+                    Is_Chief = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -175,6 +188,24 @@ namespace OnlineSecureHospitalSystem.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Role_ID", "Role_Name" },
+                values: new object[,]
+                {
+                    { 1, "Admin" },
+                    { 2, "Receptionist" },
+                    { 3, "Chief Doctor" },
+                    { 4, "Curing Doctor" },
+                    { 5, "Consulting Doctor" },
+                    { 6, "Patient" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "User_ID", "Address", "Email", "First_Name", "IsDefaultPassword", "Last_Name", "Password", "Phone_Number", "Role_ID", "Username" },
+                values: new object[] { 1, "Kyrenia", "salahi_erensel@hotmail.com", "Admin", 1, "Admin", "123456", "5338500968", 1, "salahiadmin" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_Doctor_ID",
                 table: "Appointments",
@@ -247,15 +278,8 @@ namespace OnlineSecureHospitalSystem.Migrations
             migrationBuilder.DropTable(
                 name: "Users");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Role_Name",
-                table: "Roles",
-                type: "TEXT",
-                nullable: false,
-                defaultValue: "",
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            migrationBuilder.DropTable(
+                name: "Roles");
         }
     }
 }

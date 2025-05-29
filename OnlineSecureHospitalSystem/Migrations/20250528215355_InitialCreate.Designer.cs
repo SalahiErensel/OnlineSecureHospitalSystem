@@ -11,8 +11,8 @@ using OnlineSecureHospitalSystem.Data;
 namespace OnlineSecureHospitalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250519194850_AllTablesCreated")]
-    partial class AllTablesCreated
+    [Migration("20250528215355_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -79,11 +79,11 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Expertise")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Is_Chief")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Specialization")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("User_ID")
                         .HasColumnType("INTEGER");
@@ -168,6 +168,38 @@ namespace OnlineSecureHospitalSystem.Migrations
                     b.HasKey("Role_ID");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Role_ID = 1,
+                            Role_Name = "Admin"
+                        },
+                        new
+                        {
+                            Role_ID = 2,
+                            Role_Name = "Receptionist"
+                        },
+                        new
+                        {
+                            Role_ID = 3,
+                            Role_Name = "Chief Doctor"
+                        },
+                        new
+                        {
+                            Role_ID = 4,
+                            Role_Name = "Curing Doctor"
+                        },
+                        new
+                        {
+                            Role_ID = 5,
+                            Role_Name = "Consulting Doctor"
+                        },
+                        new
+                        {
+                            Role_ID = 6,
+                            Role_Name = "Patient"
+                        });
                 });
 
             modelBuilder.Entity("OnlineSecureHospitalSystem.Data.Models.Users", b =>
@@ -176,13 +208,33 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Address")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("First_Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("IsDefaultPassword")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Last_Name")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Password")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone_Number")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Role_ID")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Username")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("User_ID");
@@ -190,6 +242,21 @@ namespace OnlineSecureHospitalSystem.Migrations
                     b.HasIndex("Role_ID");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            User_ID = 1,
+                            Address = "Kyrenia",
+                            Email = "salahi_erensel@hotmail.com",
+                            First_Name = "Admin",
+                            IsDefaultPassword = 1,
+                            Last_Name = "Admin",
+                            Password = "123456",
+                            Phone_Number = "5338500968",
+                            Role_ID = 1,
+                            Username = "salahiadmin"
+                        });
                 });
 
             modelBuilder.Entity("OnlineSecureHospitalSystem.Data.Models.Appointments", b =>

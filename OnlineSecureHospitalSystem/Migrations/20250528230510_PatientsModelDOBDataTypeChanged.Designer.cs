@@ -11,8 +11,8 @@ using OnlineSecureHospitalSystem.Data;
 namespace OnlineSecureHospitalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250519195622_SeedRoles")]
-    partial class SeedRoles
+    [Migration("20250528230510_PatientsModelDOBDataTypeChanged")]
+    partial class PatientsModelDOBDataTypeChanged
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -79,11 +79,11 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Expertise")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Is_Chief")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Specialization")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("User_ID")
                         .HasColumnType("INTEGER");
@@ -131,19 +131,7 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateOnly>("DOB")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Gender")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Phone_Number")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Surname")
+                    b.Property<DateTime?>("DOB")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("User_ID")
@@ -208,13 +196,40 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DOB")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("First_Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("IsDefaultPassword")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Last_Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Password")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Phone_Number")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Role_ID")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Username")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("User_ID");
@@ -222,6 +237,21 @@ namespace OnlineSecureHospitalSystem.Migrations
                     b.HasIndex("Role_ID");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            User_ID = 1,
+                            Address = "Kyrenia",
+                            Email = "salahi_erensel@hotmail.com",
+                            First_Name = "Admin",
+                            IsDefaultPassword = 1,
+                            Last_Name = "Admin",
+                            Password = "123456",
+                            Phone_Number = "5338500968",
+                            Role_ID = 1,
+                            Username = "salahiadmin"
+                        });
                 });
 
             modelBuilder.Entity("OnlineSecureHospitalSystem.Data.Models.Appointments", b =>
