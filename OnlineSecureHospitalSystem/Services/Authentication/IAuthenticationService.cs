@@ -6,7 +6,6 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
     public interface IAuthenticationService
     {
         Task<List<Roles>> GetRolesAsync();
-        Task<bool> RegisterUserAsync(Users user, string? specialization, DateTime? dob);
         Task<AuthenticatedUser?> LoginUserAsync(LoginDTO loginDTO);
         Task<bool> UpdatePasswordAsync(int userId, string newPassword);
         Task<bool> RegisterPatientAsync(RegisterPatientDTO registerPatient);

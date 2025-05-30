@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using OnlineSecureHospitalSystem.Data;
 using OnlineSecureHospitalSystem.Data.Models;
+using OnlineSecureHospitalSystem.Services.Admin;
 using OnlineSecureHospitalSystem.Services.Authentication;
 using OnlineSecureHospitalSystem.Services.Authorization;
 using OnlineSecureHospitalSystem.Services.Profile;
@@ -19,6 +20,7 @@ builder.Services.AddScoped<IPasswordHasher<Users>, PasswordHasher<Users>>();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<AccessControlService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>

@@ -1,0 +1,147 @@
+﻿@page "/admin/all-users"
+
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.Admin
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject AccessControlService AccessControl
+@inject NavigationManager NavigationManager
+@inject AuthorizationService AuthorizationService
+@inject IAdminService AdminService
+@inject ISnackbar Snackbar
+
+<PageTitle>All Users - Admin Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2 px-2">
+    <MudPaper Class="pa-2 pa-md-4">
+        <MudGrid>
+            <MudItem xs="12" Class="d-flex flex-column flex-md-row align-center justify-space-between">
+                <MudText Typo="Typo.h4" Class="mb-2 mb-md-0">
+                    All System Users
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="AddUser"
+                           Size="@Size.Small"
+                           Class="ml-auto">
+                    Add New User
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <div style="overflow-x: auto; width: 100%;">
+                    <MudDataGrid T="AllUsersDTO"
+                                 Items="@allUsersDTO"
+                                 Sortable="true"
+                                 Groupable="false"
+                                 Pageable="true"
+                                 PageSize="10"
+                                 RowsPerPageString="Rows per page"
+                                 Loading="@loading"
+                                 Hover="true"
+                                 Striped="true"
+                                 Dense="true"
+                                 Class="mud-elevation-4"
+                                 Height="600px"
+                                 FixedHeader="true"
+                                 Style="min-width: 800px;">
+
+                        <Columns>
+                            <PropertyColumn Property="x => x.First_Name"
+                                            Title="First Name"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 120px;" />
+                            <PropertyColumn Property="x => x.Last_Name"
+                                            Title="Last Name"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 120px;" />
+                            <PropertyColumn Property="x => x.Username"
+                                            Title="Username"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 130px;" />
+                            <PropertyColumn Property="x => x.Email"
+                                            Title="Email"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 200px;" />
+                            <PropertyColumn Property="x => x.Phone_Number"
+                                            Title="Phone"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 130px;" />
+                            <TemplateColumn Title="Role"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 140px;">
+                                <CellTemplate>
+                                    <MudChip Size="@Size.Small"
+                                             Variant="@Variant.Filled"
+                                             Class="ma-1">
+                                        @context.Item.Role
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+
+                        <PagerContent>
+                            <MudDataGridPager T="AllUsersDTO" />
+                        </PagerContent>
+                    </MudDataGrid>
+                </div>
+                <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="false">
+                    <MudAlert Severity="Severity.Info"
+                              Variant="Variant.Text"
+                              Dense="true"
+                              Class="mt-2"
+                              Icon="@Icons.Material.Filled.TouchApp">
+                        <MudText Typo="Typo.caption">
+                            Swipe left/right to see all columns
+                        </MudText>
+                    </MudAlert>
+                </MudHidden>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    public List<Users> userList = new List<Users>();
+    public List<AllUsersDTO> allUsersDTO = new List<AllUsersDTO>();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Admin" });
+
+        try
+        {
+            userList = await AdminService.GetAllUsersAsync();
+
+            allUsersDTO = userList.Select(u => new AllUsersDTO
+            {
+                First_Name = u.First_Name,
+                Last_Name = u.Last_Name,
+                Username = u.Username,
+                Email = u.Email,
+                Phone_Number = u.Phone_Number,
+                Role = u.Role!.Role_Name
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading users: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AddUser()
+    {
+        NavigationManager.NavigateTo("/admin/register-user");
+    }
+}

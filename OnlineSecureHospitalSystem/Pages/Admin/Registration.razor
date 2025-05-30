@@ -1,4 +1,5 @@
 ﻿@page "/admin/register-user"
+@using OnlineSecureHospitalSystem.Services.Admin
 @using OnlineSecureHospitalSystem.Services.Authentication
 @using OnlineSecureHospitalSystem.Data.Models
 @using System.ComponentModel.DataAnnotations
@@ -6,6 +7,7 @@
 @inject IAuthenticationService AuthenticationService
 @inject NavigationManager Navigation
 @inject AuthorizationService authorizationService
+@inject IAdminService AdminService
 
 @inject AccessControlService AccessControl
 
@@ -117,7 +119,7 @@
                 return;
             }
 
-            var result = await AuthenticationService.RegisterUserAsync(newUser, specialization, dob);
+            var result = await AdminService.RegisterUserAsync(newUser, specialization, dob);
 
             if (result)
             {
