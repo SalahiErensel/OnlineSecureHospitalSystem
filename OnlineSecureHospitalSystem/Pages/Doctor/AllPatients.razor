@@ -1,13 +1,14 @@
-﻿@page "/admin/all-users"
+﻿@page "/doctor/all-patients"
 
 @using OnlineSecureHospitalSystem.Data.DTO
 @using OnlineSecureHospitalSystem.Data.Models
 @using OnlineSecureHospitalSystem.Services.Admin
 @using OnlineSecureHospitalSystem.Services.Authorization
+@using OnlineSecureHospitalSystem.Services.Doctor
 @inject AccessControlService AccessControl
 @inject NavigationManager NavigationManager
 @inject AuthorizationService AuthorizationService
-@inject IAdminService AdminService
+@inject IDoctorService DoctorService
 @inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2 px-2">
@@ -15,21 +16,13 @@
         <MudGrid>
             <MudItem xs="12" Class="d-flex flex-column flex-md-row align-center justify-space-between">
                 <MudText Typo="Typo.h4" Class="mb-2 mb-md-0">
-                    All System Users
+                    All Patients
                 </MudText>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.PersonAdd"
-                           OnClick="AddUser"
-                           Size="@Size.Small"
-                           Class="ml-auto">
-                    Add New User
-                </MudButton>
             </MudItem>
             <MudItem xs="12">
                 <div style="overflow-x: auto; width: 100%;">
-                    <MudDataGrid T="AllUsersDTO"
-                                 Items="@allUsersDTO"
+                    <MudDataGrid T="AllPatientsDTO"
+                                 Items="@allPatientsDTO"
                                  Sortable="true"
                                  Groupable="false"
                                  Pageable="true"
@@ -53,8 +46,8 @@
                                             Sortable="true"
                                             Resizable="true"
                                             Style="min-width: 120px;" />
-                            <PropertyColumn Property="x => x.Username"
-                                            Title="Username"
+                            <PropertyColumn Property="x => x.Age"
+                                            Title="Age"
                                             Sortable="true"
                                             Resizable="true"
                                             Style="min-width: 130px;" />
@@ -68,22 +61,16 @@
                                             Sortable="true"
                                             Resizable="true"
                                             Style="min-width: 130px;" />
-                            <TemplateColumn Title="Role"
+                            <PropertyColumn Property="x => x.Address"
+                                            Title="Address"
                                             Sortable="true"
                                             Resizable="true"
                                             Style="min-width: 140px;">
-                                <CellTemplate>
-                                    <MudChip Size="@Size.Small"
-                                             Variant="@Variant.Filled"
-                                             Class="ma-1">
-                                        @context.Item.Role
-                                    </MudChip>
-                                </CellTemplate>
-                            </TemplateColumn>
+                            </PropertyColumn>
                         </Columns>
 
                         <PagerContent>
-                            <MudDataGridPager T="AllUsersDTO" />
+                            <MudDataGridPager T="AllPatientsDTO" />
                         </PagerContent>
                     </MudDataGrid>
                 </div>
@@ -104,31 +91,31 @@
 </MudContainer>
 
 @code {
-    public List<Users> userList = new List<Users>();
-    public List<AllUsersDTO> allUsersDTO = new List<AllUsersDTO>();
+    public List<Patients> patientList = new List<Patients>();
+    public List<AllPatientsDTO> allPatientsDTO = new List<AllPatientsDTO>();
     private bool loading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Admin" });
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Chief Doctor" });
 
         try
         {
-            userList = await AdminService.GetAllUsersAsync();
+            patientList = await DoctorService.GetAllPatientsAsync();
 
-            allUsersDTO = userList.Select(u => new AllUsersDTO
+            allPatientsDTO = patientList.Select(u => new AllPatientsDTO
             {
-                First_Name = u.First_Name,
-                Last_Name = u.Last_Name,
-                Username = u.Username,
-                Email = u.Email,
-                Phone_Number = u.Phone_Number,
-                Role = u.Role!.Role_Name
+                Address = u.User!.Address,
+                Age = CalculatePatientAge(u.DOB!.Value),
+                Email = u.User.Email,
+                First_Name = u.User.First_Name,
+                Last_Name = u.User.Last_Name,
+                Phone_Number = u.User.Phone_Number,
             }).ToList();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading users: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error loading patients: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -136,8 +123,13 @@
         }
     }
 
-    private void AddUser()
+    public int CalculatePatientAge(DateTime dob)
     {
-        NavigationManager.NavigateTo("/admin/register-user");
+        var today = DateTime.Today;
+
+        var age = today.Year - dob.Year;
+
+        if (dob.Date > today.AddYears(-age)) age--;
+        return age;
     }
 }

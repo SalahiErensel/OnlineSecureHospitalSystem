@@ -7,6 +7,7 @@ using OnlineSecureHospitalSystem.Data.Models;
 using OnlineSecureHospitalSystem.Services.Admin;
 using OnlineSecureHospitalSystem.Services.Authentication;
 using OnlineSecureHospitalSystem.Services.Authorization;
+using OnlineSecureHospitalSystem.Services.Doctor;
 using OnlineSecureHospitalSystem.Services.Profile;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,11 +22,10 @@ builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddScoped<AccessControlService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-
+builder.Services.AddScoped<IDoctorService, DoctorService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=online_secure_hospital.db"));
-
 
 var app = builder.Build();
 
