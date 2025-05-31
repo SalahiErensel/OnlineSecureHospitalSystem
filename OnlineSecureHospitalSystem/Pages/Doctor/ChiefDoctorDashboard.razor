@@ -1,0 +1,746 @@
+﻿@page "/doctor/chief-dashboard"
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.Authorization
+@using OnlineSecureHospitalSystem.Services.Doctor
+@using OnlineSecureHospitalSystem.Services.MedicalRecord
+@using System.Text
+@using System.Security.Cryptography
+@inject AccessControlService AccessControl
+@inject NavigationManager NavigationManager
+@inject AuthorizationService AuthorizationService
+@inject IDoctorService DoctorService
+@inject IMedicalRecordsService MedicalRecordsService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog @bind-Visible="showAssignDialog" Options="assignDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Assignment" Class="mr-3" />
+            Assign Curing Doctor
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (selectedAppointment != null)
+        {
+            <MudContainer Style="max-width: 600px;">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudCard Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Patient Information</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2"><strong>Name:</strong> @selectedAppointment!.Patient!.User!.First_Name @selectedAppointment.Patient.User.Last_Name</MudText>
+                                <MudText Typo="Typo.body2"><strong>Complaint:</strong> @selectedAppointment.Reason</MudText>
+                                <MudText Typo="Typo.body2"><strong>Additional Info:</strong> @(selectedAppointment.Extra_Information ?? "None")</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudSelect @bind-Value="selectedDoctorId"
+                                   Label="Select Curing Doctor"
+                                   Required="true"
+                                   Variant="Variant.Outlined"
+                                   Class="mb-3">
+                            @foreach (var doctor in doctors)
+                            {
+                                <MudSelectItem Value="@doctor.Doctor_ID">
+                                    @doctor!.User!.First_Name @doctor.User.Last_Name - @doctor.Specialization
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseAssignDialog" Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="AssignDoctor"
+                   Disabled="@(!IsValidAssignment())"
+                   StartIcon="@Icons.Material.Filled.Assignment">
+            Assign Doctor
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="showMedicalRecordsDialog" Options="medicalRecordsDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Class="mr-3" />
+            Medical Records - @selectedPatientName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-width: 1000px; max-height: 600px; overflow-y: auto;">
+            @if (loadingMedicalRecords)
+            {
+                <div Class="d-flex justify-center align-center pa-8">
+                    <MudProgressCircular Indeterminate="true" />
+                    <MudText Class="ml-3">Loading medical records...</MudText>
+                </div>
+            }
+            else if (patientMedicalRecords.Any())
+            {
+                <MudDataGrid T="PatientMedicalRecordDTO"
+                             Items="@patientMedicalRecords"
+                             Sortable="true"
+                             Groupable="false"
+                             Pageable="true"
+                             PageSize="5"
+                             RowsPerPageString="Rows per page"
+                             Hover="true"
+                             Striped="true"
+                             Dense="true"
+                             Class="mud-elevation-2">
+
+                    <Columns>
+                        <TemplateColumn Title="Appointment Date"
+                                        Sortable="true"
+                                        SortBy="@(x => x.Appointment_Date)"
+                                        Style="min-width: 120px;">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                    @context!.Item!.Appointment_Date!.Value.ToString("dd MMM yyyy")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Doctor"
+                                        Sortable="true"
+                                        SortBy="@(x => x.Doctor_Name)"
+                                        Style="min-width: 150px;">
+                            <CellTemplate>
+                                <div>
+                                    <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                        @context.Item.Doctor_Name @context.Item.Doctor_Lastname
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Class="text-muted">
+                                        @context.Item.Doctor_Specialization
+                                    </MudText>
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Complaint"
+                                        Sortable="true"
+                                        SortBy="@(x => x.Patient_Complaint)"
+                                        Style="min-width: 150px;">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">
+                                    @context.Item.Patient_Complaint
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Medical Result"
+                                        Sortable="false"
+                                        Style="min-width: 200px;">
+                            <CellTemplate>
+                                @if (context!.Item!.Is_Sensitive!.Value)
+                                {
+                                    <div Class="d-flex align-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                 Size="@Size.Small"
+                                                 Color="Color.Warning"
+                                                 Class="mr-1" />
+                                        <MudText Typo="Typo.caption" Class="text-muted">
+                                            Sensitive Information
+                                        </MudText>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(context.Item.Result))
+                                {
+                                    <MudText Typo="Typo.body2">
+                                        @context.Item.Result
+                                    </MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.caption" Class="text-muted">
+                                        Pending
+                                    </MudText>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+
+                    <PagerContent>
+                        <MudDataGridPager T="PatientMedicalRecordDTO" />
+                    </PagerContent>
+                </MudDataGrid>
+            }
+            else
+            {
+                <div Class="d-flex flex-column align-center justify-center pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen"
+                             Size="@Size.Large"
+                             Color="Color.Default"
+                             Class="mb-4" />
+                    <MudText Typo="Typo.h6" Class="mb-2">No medical records found</MudText>
+                    <MudText Typo="Typo.body2" Class="text-muted">
+                        This patient has no medical records yet.
+                    </MudText>
+                </div>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseMedicalRecordsDialog" Variant="Variant.Text">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2 px-2">
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h4">
+                    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2" />
+                    Chief Doctor Dashboard
+                </MudText>
+                <MudText Typo="Typo.body2" Class="text-muted">
+                    Assign doctors and oversee patient care
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end">
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                    <MudButton StartIcon="@Icons.Material.Filled.Refresh" OnClick="RefreshData">
+                        Refresh
+                    </MudButton>
+                </MudButtonGroup>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Class="mud-height-full">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" Style="font-size: 3rem;" />
+                    <MudText Typo="Typo.h4" Color="Color.Warning">@pendingAppointmentsCount</MudText>
+                    <MudText Typo="Typo.body2">Pending Assignments</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Class="mud-height-full">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Success" Style="font-size: 3rem;" />
+                    <MudText Typo="Typo.h4" Color="Color.Success">@totalPatientsCount</MudText>
+                    <MudText Typo="Typo.body2">Total Patients</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Class="mud-height-full">
+                <MudCardContent Class="text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Color="Color.Primary" Style="font-size: 3rem;" />
+                    <MudText Typo="Typo.h4" Color="Color.Primary">@availableDoctorsCount</MudText>
+                    <MudText Typo="Typo.body2">Available Curing Doctors</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12">
+            <MudPaper Class="pa-4">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h5" Class="mb-4">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
+                            Pending Appointment Assignments
+                        </MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <div style="overflow-x: auto; width: 100%;">
+                            <MudDataGrid T="Appointments"
+                                         Items="@pendingAppointments"
+                                         Sortable="true"
+                                         Groupable="false"
+                                         Pageable="true"
+                                         PageSize="10"
+                                         RowsPerPageString="Rows per page"
+                                         Loading="@loadingAppointments"
+                                         Hover="true"
+                                         Striped="true"
+                                         Dense="true"
+                                         Class="mud-elevation-4"
+                                         FixedHeader="false"
+                                         Style="min-width: 900px;">
+
+                                <Columns>
+                                    <TemplateColumn Title="Patient"
+                                                    Sortable="true"
+                                                    SortBy="@(x => x.Patient!.User!.First_Name)"
+                                                    Style="min-width: 150px;">
+                                        <CellTemplate>
+                                            <div>
+                                                <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                                    @context.Item!.Patient!.User!.First_Name @context.Item.Patient.User.Last_Name
+                                                </MudText>
+                                            </div>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Complaint"
+                                                    Sortable="false"
+                                                    Style="min-width: 250px;">
+                                        <CellTemplate>
+                                            <MudText Typo="Typo.body2" Class="text-truncate" Style="max-width: 250px;">
+                                                @context.Item.Reason
+                                            </MudText>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Additional Info"
+                                                    Sortable="false"
+                                                    Style="min-width: 250px;">
+                                        <CellTemplate>
+                                            <MudText Typo="Typo.body2" Class="text-truncate" Style="max-width: 250px;">
+                                                @context.Item.Extra_Information
+                                            </MudText>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Actions"
+                                                    Sortable="false"
+                                                    Filterable="false"
+                                                    Style="min-width: 150px;">
+                                        <CellTemplate>
+                                            <MudButtonGroup Size="@Size.Small" Variant="@Variant.Outlined">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Assignment"
+                                                               Color="Color.Primary"
+                                                               Size="@Size.Small"
+                                                               OnClick="@(() => OpenAssignDialog(context.Item))"
+                                                               Title="Assign Doctor" />
+                                            </MudButtonGroup>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                                <PagerContent>
+                                    <MudDataGridPager T="Appointments" />
+                                </PagerContent>
+
+                                <NoRecordsContent>
+                                    <div Class="d-flex flex-column align-center justify-center pa-8">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                 Size="@Size.Large"
+                                                 Color="Color.Success"
+                                                 Class="mb-4" />
+                                        <MudText Typo="Typo.h6" Class="mb-2">No pending appointments</MudText>
+                                        <MudText Typo="Typo.body2" Class="text-muted">
+                                            All appointment requests have been assigned to doctors.
+                                        </MudText>
+                                    </div>
+                                </NoRecordsContent>
+                            </MudDataGrid>
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 px-2">
+    <MudPaper Class="pa-2 pa-md-4">
+        <MudGrid>
+            <MudItem xs="12" Class="d-flex flex-column flex-md-row align-center justify-space-between">
+                <MudText Typo="Typo.h5" Class="mb-2 mb-md-0">
+                    All Patients
+                </MudText>
+            </MudItem>
+            <MudItem xs="12">
+                <div style="overflow-x: auto; width: 100%;">
+                    <MudDataGrid T="AllPatientsDTO"
+                                 Items="@allPatientsDTO"
+                                 Sortable="true"
+                                 Groupable="false"
+                                 Pageable="true"
+                                 PageSize="10"
+                                 RowsPerPageString="Rows per page"
+                                 Loading="@loadingPatients"
+                                 Hover="true"
+                                 Striped="true"
+                                 Dense="true"
+                                 Class="mud-elevation-4"
+                                 FixedHeader="false"
+                                 Style="min-width: 900px;">
+                        <Columns>
+                            <PropertyColumn Property="x => x.First_Name"
+                                            Title="First Name"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 120px;" />
+                            <PropertyColumn Property="x => x.Last_Name"
+                                            Title="Last Name"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 120px;" />
+                            <PropertyColumn Property="x => x.Age"
+                                            Title="Age"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 130px;" />
+                            <PropertyColumn Property="x => x.Email"
+                                            Title="Email"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 200px;" />
+                            <PropertyColumn Property="x => x.Phone_Number"
+                                            Title="Phone"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 130px;" />
+                            <PropertyColumn Property="x => x.Address"
+                                            Title="Address"
+                                            Sortable="true"
+                                            Resizable="true"
+                                            Style="min-width: 140px;">
+                            </PropertyColumn>
+                            <TemplateColumn Title="Actions"
+                                            Sortable="false"
+                                            Filterable="false"
+                                            Style="min-width: 120px;">
+                                <CellTemplate>
+                                    <MudIconButton Icon="@Icons.Material.Filled.MedicalServices"
+                                                   Color="Color.Info"
+                                                   Size="@Size.Small"
+                                                   OnClick="@(() => OpenMedicalRecordsDialog(context.Item!))"
+                                                   Title="View Medical Records" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+
+                        <PagerContent>
+                            <MudDataGridPager T="AllPatientsDTO" />
+                        </PagerContent>
+                    </MudDataGrid>
+                </div>
+                <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="false">
+                    <MudAlert Severity="Severity.Info"
+                              Variant="Variant.Text"
+                              Dense="true"
+                              Class="mt-2"
+                              Icon="@Icons.Material.Filled.TouchApp">
+                        <MudText Typo="Typo.caption">
+                            Swipe left/right to see all columns
+                        </MudText>
+                    </MudAlert>
+                </MudHidden>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    //Data lists
+    public List<Appointments> pendingAppointments = new();
+    private List<Doctors> doctors = new();
+    private Assignments assignments = new();
+    public List<Patients> patientList = new List<Patients>();
+    public List<AllPatientsDTO> allPatientsDTO = new List<AllPatientsDTO>();
+
+    //Loading states
+    private bool loadingAppointments = true;
+    private bool loadingDoctors = true;
+    private bool loadingPatients = true;
+    private bool loadingMedicalRecords = false;
+
+    //Statistics
+    private int pendingAppointmentsCount = 0;
+    private int assignedAppointmentsCount = 0;
+    private int totalPatientsCount = 0;
+    private int availableDoctorsCount = 0;
+
+    //Dialog state for assignment
+    private bool showAssignDialog = false;
+    private DialogOptions assignDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private Appointments? selectedAppointment;
+
+    //Dialog state for medical records
+    private bool showMedicalRecordsDialog = false;
+    private DialogOptions medicalRecordsDialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    private string selectedPatientName = "";
+    private List<PatientMedicalRecordDTO> patientMedicalRecords = new List<PatientMedicalRecordDTO>();
+
+    //Assignment form data
+    private int selectedDoctorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Chief Doctor" });
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        await Task.WhenAll(
+            LoadPendingAppointments(),
+            LoadAvailableDoctors(),
+            LoadStatistics(),
+            GetAllPatients()
+        );
+    }
+
+    private async Task GetAllPatients()
+    {
+        try
+        {
+            patientList = await DoctorService.GetAllPatientsAsync();
+
+            allPatientsDTO = patientList.Select(u => new AllPatientsDTO
+            {
+                Patient_ID = u.Patient_ID,
+                Address = u.User!.Address,
+                Age = CalculatePatientAge(u.DOB!.Value),
+                Email = u.User.Email,
+                First_Name = u.User.First_Name,
+                Last_Name = u.User.Last_Name,
+                Phone_Number = u.User.Phone_Number,
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading patients: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loadingPatients = false;
+        }
+    }
+
+    private async Task LoadPendingAppointments()
+    {
+        loadingAppointments = true;
+
+        try
+        {
+            pendingAppointments = await DoctorService.GetPendingAppointmentsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading pending appointments: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loadingAppointments = false;
+        }
+    }
+
+    private async Task LoadAvailableDoctors()
+    {
+        loadingDoctors = true;
+        try
+        {
+            doctors = await DoctorService.GetToBeAssignedDoctorsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading available doctors: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loadingDoctors = false;
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            pendingAppointmentsCount = await DoctorService.GetTotalPendingAssignmentsAsync();
+            totalPatientsCount = await DoctorService.GetTotalPatientsAsync();
+            availableDoctorsCount = await DoctorService.GetTotalDoctorsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading statistics: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OpenAssignDialog(Appointments appointment)
+    {
+        selectedAppointment = appointment;
+        showAssignDialog = true;
+        StateHasChanged();
+    }
+
+    private void CloseAssignDialog()
+    {
+        showAssignDialog = false;
+        selectedAppointment = null;
+        StateHasChanged();
+    }
+
+    private async Task OpenMedicalRecordsDialog(AllPatientsDTO patient)
+    {
+        selectedPatientName = $"{patient.First_Name} {patient.Last_Name}";
+        showMedicalRecordsDialog = true;
+        loadingMedicalRecords = true;
+        patientMedicalRecords.Clear();
+
+        StateHasChanged();
+
+        try
+        {
+            var patientEntity = patientList.FirstOrDefault(p =>
+                p.User!.First_Name == patient.First_Name &&
+                p.User.Last_Name == patient.Last_Name);
+
+            if (patientEntity != null)
+            {
+                 var medicalRecords = await MedicalRecordsService.GetMedicalRecordsByPatientIdAsync(patientEntity.Patient_ID);
+
+                foreach (var record in medicalRecords)
+                {
+                    string decryptedResult = "";
+
+                    if (record.Record_Data != null && record.Record_Data.Length > 0)
+                    {
+                        try
+                        {
+                            decryptedResult = DecryptMedicalRecord(record.Record_Data);
+                        }
+                        catch
+                        {
+                            decryptedResult = "Unable to load medical record";
+                        }
+                    }
+                    else
+                    {
+                        decryptedResult = "No medical record available";
+                    }
+
+                    var patientRecord = new PatientMedicalRecordDTO
+                    {
+                        Doctor_Name = record.Doctor!.User!.First_Name!,
+                        Doctor_Lastname = record.Doctor.User.Last_Name!,
+                        Doctor_Specialization = record.Doctor.Specialization!,
+                        Result = decryptedResult,
+                        Is_Sensitive = record.Is_Sensitive,
+                        Patient_Complaint = record!.Appointment!.Reason!,
+                        Appointment_Date = record.Appointment!.Appointment_Date,
+                    };
+
+                    patientMedicalRecords.Add(patientRecord);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading medical records: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loadingMedicalRecords = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CloseMedicalRecordsDialog()
+    {
+        showMedicalRecordsDialog = false;
+        selectedPatientName = "";
+        patientMedicalRecords.Clear();
+        StateHasChanged();
+    }
+
+    private string DecryptMedicalRecord(byte[] encryptedData)
+    {
+        try
+        {
+            string key = "HOSPITAL";
+            return DESDecrypt(encryptedData, key);
+        }
+        catch (Exception ex)
+        {
+            return $"Decryption error: {ex.Message}";
+        }
+    }
+
+    private string DESDecrypt(byte[] encryptedData, string key)
+    {
+        try
+        {
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key.PadRight(8).Substring(0, 8));
+
+            using (DES des = DES.Create())
+            {
+                des.Key = keyBytes;
+                des.Mode = CipherMode.ECB;
+                des.Padding = PaddingMode.PKCS7;
+
+                using (ICryptoTransform decryptor = des.CreateDecryptor())
+                {
+                    byte[] decryptedBytes = decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
+                    return Encoding.UTF8.GetString(decryptedBytes);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to decrypt: {ex.Message}";
+        }
+    }
+
+    private bool IsValidAssignment()
+    {
+        return selectedDoctorId > 0;
+    }
+
+    private async Task AssignDoctor()
+    {
+        try
+        {
+            if (!IsValidAssignment() || selectedAppointment == null)
+            {
+                Snackbar.Add("Please fill in all required fields", Severity.Warning);
+                return;
+            }
+
+            var currentDoctor = await DoctorService.GetDoctorByUserIdAsync(AuthorizationService!.CurrentUser!.User_ID);
+
+            assignments.Curing_Doctor_ID = selectedDoctorId;
+
+            assignments.Assigned_By = currentDoctor!.Doctor_ID;
+            assignments.Patient_ID = selectedAppointment.Patient_ID;
+
+            await DoctorService.AssignCuringDoctorAsync(assignments);
+
+            Snackbar.Add($"Curing Doctor {currentDoctor!.User!.First_Name} {currentDoctor.User.Last_Name} successfully to {selectedAppointment!.Patient!.User!.First_Name} {selectedAppointment.Patient.User.Last_Name}", Severity.Success);
+
+            CloseAssignDialog();
+
+            await LoadPendingAppointments();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error assigning doctor: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ViewPatientHistory(int patientId)
+    {
+        NavigationManager.NavigateTo($"/chief-doctor/patient/{patientId}/medical-records");
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadDashboardData();
+        Snackbar.Add("Dashboard data refreshed", Severity.Success);
+    }
+
+    public int CalculatePatientAge(DateTime dob)
+    {
+        var today = DateTime.Today;
+
+        var age = today.Year - dob.Year;
+
+        if (dob.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+}

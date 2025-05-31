@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OnlineSecureHospitalSystem.Data;
 
@@ -10,9 +11,11 @@ using OnlineSecureHospitalSystem.Data;
 namespace OnlineSecureHospitalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250531173055_MedicalRecordsModelChanged")]
+    partial class MedicalRecordsModelChanged
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
@@ -109,6 +112,9 @@ namespace OnlineSecureHospitalSystem.Migrations
 
                     b.Property<int>("Curing_Doctor_ID")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("HashValue")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("Is_Sensitive")
                         .HasColumnType("INTEGER");

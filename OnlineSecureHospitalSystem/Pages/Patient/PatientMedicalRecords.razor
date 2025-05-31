@@ -1,0 +1,293 @@
+﻿@page "/patient/medical-records"
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.MedicalRecord
+@using OnlineSecureHospitalSystem.Services.Patient
+@using OnlineSecureHospitalSystem.Services.Authorization
+@using System.Text
+@using System.Security.Cryptography
+@inject AccessControlService AccessControl
+@inject NavigationManager NavigationManager
+@inject AuthorizationService AuthorizationService
+@inject IPatientService PatientService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IMedicalRecordsService MedicalRecordsService
+
+<PageTitle>My Medical Records</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2 px-2">
+    <MudPaper Class="pa-2 pa-md-4">
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Typo="Typo.h4" Class="mb-4">
+                    <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Class="mr-2" />
+                    My Medical Records
+                </MudText>
+                <MudAlert Severity="Severity.Info"
+                          Variant="Variant.Text"
+                          Dense="true"
+                          Class="mb-4"
+                          Icon="@Icons.Material.Filled.Info">
+                    <MudText Typo="Typo.body2">
+                        <strong>Note:</strong> Some sensitive medical information may be restricted for your protection.
+                        For complete details, please consult with your doctor.
+                    </MudText>
+                </MudAlert>
+            </MudItem>
+            <MudItem xs="12">
+                <div style="overflow-x: auto; width: 100%;">
+                    <MudDataGrid T="PatientMedicalRecordDTO"
+                                 Items="@patientMedicalRecordDTO"
+                                 Sortable="true"
+                                 Groupable="false"
+                                 Pageable="true"
+                                 PageSize="10"
+                                 RowsPerPageString="Rows per page"
+                                 Loading="@loading"
+                                 Hover="true"
+                                 Striped="true"
+                                 Dense="true"
+                                 Class="mud-elevation-4"
+                                 FixedHeader="false"
+                                 Style="min-width: 800px;">
+
+                        <Columns>
+                            <TemplateColumn Title="Appointment Date"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Appointment_Date)"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    <div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                            @context!.Item!.Appointment_Date!.Value.ToString("dd MMM yyyy")
+                                        </MudText>
+                                    </div>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Doctor"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Doctor_Name)"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    <div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                            @context.Item.Doctor_Name @context.Item.Doctor_Lastname
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Class="text-muted">
+                                            @context.Item.Doctor_Specialization
+                                        </MudText>
+                                    </div>
+                                </CellTemplate>
+                            </TemplateColumn>
+
+                            <TemplateColumn Title="Complaint"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Patient_Complaint)"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    <div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                            @context.Item.Patient_Complaint
+                                        </MudText>
+                                    </div>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Result"
+                                            Sortable="false"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    @if (context!.Item!.Is_Sensitive!.Value)
+                                    {
+                                        <div Class="d-flex align-center">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                     Size="@Size.Small"
+                                                     Color="Color.Warning"
+                                                     Class="mr-1" />
+                                            <MudText Typo="Typo.caption" Class="text-muted">
+                                                Restricted - Contact Doctor
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrEmpty(context.Item.Result))
+                                    {
+                                        <MudText Typo="Typo.body2" Class="text-truncate" Style="max-width: 150px;">
+                                            @context.Item.Result
+                                        </MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.caption" Class="text-muted">
+                                            Pending
+                                        </MudText>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+
+                        <PagerContent>
+                            <MudDataGridPager T="PatientMedicalRecordDTO" />
+                        </PagerContent>
+
+                        <NoRecordsContent>
+                            <div Class="d-flex flex-column align-center justify-center pa-8">
+                                <MudIcon Icon="@Icons.Material.Filled.FolderOpen"
+                                         Size="@Size.Large"
+                                         Color="Color.Default"
+                                         Class="mb-4" />
+                                <MudText Typo="Typo.h6" Class="mb-2">No medical records found</MudText>
+                                <MudText Typo="Typo.body2" Class="text-muted mb-4">
+                                    Your medical records will appear here after your appointments.
+                                </MudText>
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.CalendarToday"
+                                           OnClick="@(() => NavigationManager.NavigateTo("/patient/appointments"))">
+                                    Book an Appointment
+                                </MudButton>
+                            </div>
+                        </NoRecordsContent>
+                    </MudDataGrid>
+                </div>
+                <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="false">
+                    <MudAlert Severity="Severity.Info"
+                              Variant="Variant.Text"
+                              Dense="true"
+                              Class="mt-2"
+                              Icon="@Icons.Material.Filled.TouchApp">
+                        <MudText Typo="Typo.caption">
+                            Swipe left/right to see all columns
+                        </MudText>
+                    </MudAlert>
+                </MudHidden>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<MedicalRecords> medicalRecords = new List<MedicalRecords>();
+    private bool loading = true;
+    private List<PatientMedicalRecordDTO> patientMedicalRecordDTO = new List<PatientMedicalRecordDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Patient" });
+        await LoadMedicalRecords();
+    }
+
+    private async Task LoadMedicalRecords()
+    {
+        loading = true;
+        try
+        {
+            medicalRecords = await MedicalRecordsService.GetOwnMedicalRecordsByUserIdAsync(AuthorizationService!.CurrentUser!.User_ID);
+
+            foreach (var record in medicalRecords)
+            {
+                string decryptedResult = "";
+
+                if (record.Record_Data != null && record.Record_Data.Length > 0)
+                {
+                    try
+                    {
+                        //Decrypt the Record_Data to get doctor's one-line description
+                        decryptedResult = DecryptMedicalRecord(record.Record_Data);
+                    }
+                    catch
+                    {
+                        decryptedResult = "Unable to load medical record";
+                    }
+                }
+                else
+                {
+                    decryptedResult = "No medical record available";
+                }
+
+                var patientRecord = new PatientMedicalRecordDTO
+                {
+                    Doctor_Name = record.Doctor!.User!.First_Name!,
+                    Doctor_Lastname = record.Doctor.User.Last_Name!,
+                    Doctor_Specialization = record.Doctor.Specialization!,
+                    Result = decryptedResult,
+                    Is_Sensitive = record.Is_Sensitive,
+                    Patient_Complaint = record!.Appointment!.Reason!,
+                    Appointment_Date = record.Appointment!.Appointment_Date,
+                };
+
+                patientMedicalRecordDTO.Add(patientRecord);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading medical records: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string DecryptMedicalRecord(byte[] encryptedData)
+    {
+        try
+        {
+            string key = "HOSPITAL"; // 8-character key for DES
+            return DESDecrypt(encryptedData, key);
+        }
+        catch (Exception ex)
+        {
+            return $"Decryption error: {ex.Message}";
+        }
+    }
+
+    private string DESDecrypt(byte[] encryptedData, string key)
+    {
+        try
+        {
+            byte[] keyBytes = Encoding.UTF8.GetBytes(key.PadRight(8).Substring(0, 8));
+
+            using (DES des = DES.Create())
+            {
+                des.Key = keyBytes;
+                des.Mode = CipherMode.ECB;
+                des.Padding = PaddingMode.PKCS7;
+
+                using (ICryptoTransform decryptor = des.CreateDecryptor())
+                {
+                    byte[] decryptedBytes = decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
+                    return Encoding.UTF8.GetString(decryptedBytes);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to decrypt: {ex.Message}";
+        }
+    }
+
+    // private byte[] DESEncrypt(string plainText, string key)
+    // {
+    //     try
+    //     {
+    //         byte[] keyBytes = Encoding.UTF8.GetBytes(key.PadRight(8).Substring(0, 8));
+    //         byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+
+    //         using (DES des = DES.Create())
+    //         {
+    //             des.Key = keyBytes;
+    //             des.Mode = CipherMode.ECB;
+    //             des.Padding = PaddingMode.PKCS7;
+
+    //             using (ICryptoTransform encryptor = des.CreateEncryptor())
+    //             {
+    //                 return encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+    //             }
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         throw new Exception($"Encryption failed: {ex.Message}");
+    //     }
+    // }
+}

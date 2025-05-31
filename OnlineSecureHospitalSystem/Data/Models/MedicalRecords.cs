@@ -11,10 +11,13 @@ namespace OnlineSecureHospitalSystem.Data.Models
         public int Curing_Doctor_ID { get; set; }
         [ForeignKey(nameof(Patient))]
         public int Patient_ID { get; set; }
+        [ForeignKey(nameof(Appointment))]
+        public int Appointment_ID { get; set; }
         public byte[]? Record_Data { get; set; }
         public string? Signature { get; set; }
-        public string? HashValue {  get; set; }
+        public bool Is_Sensitive { get; set; }
         public Doctors? Doctor { get; set; }
         public Patients? Patient { get; set; }
+        public Appointments? Appointment { get; set; }
     }
 }
