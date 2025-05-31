@@ -263,14 +263,6 @@
                                                        OnClick="@(() => CancelAppointment(context.Item))"
                                                        Title="Cancel Appointment" />
                                     }
-                                    else
-                                    {
-                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                                       Color="Color.Default"
-                                                       Size="@Size.Small"
-                                                       OnClick="@(() => ViewAppointmentDetails(context.Item))"
-                                                       Title="View Details" />
-                                    }
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
@@ -485,10 +477,5 @@
                 Snackbar.Add($"Error cancelling appointment: {ex.Message}", Severity.Error);
             }
         }
-    }
-
-    private void ViewAppointmentDetails(PatientAppointmentsDTO appointment)
-    {
-        Snackbar.Add($"View details for appointment: {appointment.Appointment_ID}", Severity.Info);
     }
 }
