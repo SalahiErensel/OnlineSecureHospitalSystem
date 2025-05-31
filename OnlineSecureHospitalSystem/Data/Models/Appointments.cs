@@ -10,9 +10,11 @@ namespace OnlineSecureHospitalSystem.Data.Models
         [ForeignKey(nameof(Patient))]
         public int Patient_ID { get; set; }
         [ForeignKey(nameof(Doctor))]
-        public int Doctor_ID { get; set; }
-        public DateTime Appointment_Date { get; set; }
+        public int? Doctor_ID { get; set; }
+        public DateTime? Appointment_Date { get; set; }
         public string? Appointment_Status { get; set; }
+        public string? Reason { get; set; }
+        public string? Extra_Information { get; set; }
         public Patients? Patient {  get; set; }
         public Doctors? Doctor { get; set; }
     }

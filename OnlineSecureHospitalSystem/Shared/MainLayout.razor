@@ -17,6 +17,9 @@
                 <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
                     Home
                 </MudNavLink>
+                <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.ManageAccounts" Match="NavLinkMatch.All">
+                    Profile
+                </MudNavLink>
                 @if (authorizationService.IsInRole("Admin"))
                 {
                     <MudNavLink Href="/admin/register-user" Icon="@Icons.Material.Filled.PersonAdd" Match="NavLinkMatch.All">
@@ -32,9 +35,18 @@
                         Register Patient
                     </MudNavLink>
                 }
-                <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.ManageAccounts" Match="NavLinkMatch.All">
-                    Profile
-                </MudNavLink>
+                @if (authorizationService.IsInRole("Chief Doctor"))
+                {
+                    <MudNavLink Href="/doctor/all-patients" Icon="@Icons.Material.Filled.LocalHospital" Match="NavLinkMatch.All">
+                        Patients
+                    </MudNavLink>
+                }
+                @if (authorizationService.IsInRole("Patient"))
+                {
+                    <MudNavLink Href="/patient/appointments" Icon="@Icons.Material.Filled.CalendarMonth" Match="NavLinkMatch.All">
+                        Appointments
+                    </MudNavLink>
+                }
                 <MudNavLink Href="/" Icon="@Icons.Material.Filled.Logout" Match="NavLinkMatch.All">
                     Logout
                 </MudNavLink>

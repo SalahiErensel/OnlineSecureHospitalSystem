@@ -1,0 +1,494 @@
+﻿@page "/patient/appointments"
+@using OnlineSecureHospitalSystem.Data.DTO
+@using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services.Patient
+@using OnlineSecureHospitalSystem.Services.Authorization
+@inject AccessControlService AccessControl
+@inject NavigationManager NavigationManager
+@inject AuthorizationService AuthorizationService
+@inject IPatientService PatientService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>My Appointments</PageTitle>
+
+<MudDialog @bind-Visible="showBookDialog" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-3" />
+            Book New Appointment
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-width: 600px;">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField Label="Reason for Visit / Symptoms"
+                                  @bind-Value="createAppointment.Reason"
+                                  Required="true"
+                                  RequiredError="Please describe your symptoms or reason for visit"
+                                  Variant="Variant.Outlined"
+                                  Lines="4"
+                                  MaxLength="500"
+                                  Counter="500"
+                                  HelperText="Describe your symptoms, concerns, or reason for the appointment"
+                                  Class="mb-3" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Label="Additional Information"
+                                  @bind-Value="createAppointment.Extra_Information"
+                                  Variant="Variant.Outlined"
+                                  Lines="2"
+                                  MaxLength="250"
+                                  Counter="250"
+                                  HelperText="Any additional details, medication allergies, or special requirements"
+                                  Class="mb-3" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                        <MudText Typo="Typo.body2">
+                            <strong>Note:</strong> Your appointment request will be reviewed by our Chief Doctor who will assign the most appropriate specialist based on your symptoms.
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseBookDialog"
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="CreateAppointment"
+                   Disabled="@(!IsValidAppointment())"
+                   StartIcon="@Icons.Material.Filled.Send">
+            Book Appointment
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="showEditDialog" Options="dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />
+            Edit Appointment
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-width: 600px;">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudTextField Label="Reason for Visit / Symptoms"
+                                  @bind-Value="editAppointment.Reason"
+                                  Required="true"
+                                  RequiredError="Please describe your symptoms or reason for visit"
+                                  Variant="Variant.Outlined"
+                                  Lines="4"
+                                  MaxLength="500"
+                                  Counter="500"
+                                  HelperText="Describe your symptoms, concerns, or reason for the appointment"
+                                  Class="mb-3" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Label="Additional Information"
+                                  @bind-Value="editAppointment.Extra_Information"
+                                  Variant="Variant.Outlined"
+                                  Lines="2"
+                                  MaxLength="250"
+                                  Counter="250"
+                                  HelperText="Any additional details, medication allergies, or special requirements"
+                                  Class="mb-3" />
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseEditDialog"
+                   Variant="Variant.Text">
+            Cancel
+        </MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="UpdateAppointment"
+                   Disabled="@(!IsEditValidAppointment())"
+                   StartIcon="@Icons.Material.Filled.Save">
+            Save Changes
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-2 px-2">
+    <MudPaper Class="pa-2 pa-md-4">
+        <MudGrid>
+            <MudItem xs="12" Class="d-flex flex-column flex-md-row align-center justify-space-between">
+                <MudText Typo="Typo.h4" Class="mb-2 mb-md-0">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Class="mr-2" />
+                    My Appointments
+                </MudText>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenBookAppointmentDialog"
+                           Size="@Size.Small"
+                           Class="ml-auto">
+                    Book Appointment
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12">
+                <div style="overflow-x: auto; width: 100%;">
+                    <MudDataGrid T="PatientAppointmentsDTO"
+                                 Items="@appointments"
+                                 Sortable="true"
+                                 Groupable="false"
+                                 Pageable="true"
+                                 PageSize="10"
+                                 RowsPerPageString="Rows per page"
+                                 Loading="@loading"
+                                 Hover="true"
+                                 Striped="true"
+                                 Dense="true"
+                                 Class="mud-elevation-4"
+                                 FixedHeader="false"
+                                 Style="min-width: 700px;">
+
+                        <Columns>
+                            <TemplateColumn Title="Date & Time"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Appointment_Date)"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    @if (context.Item.Appointment_Date.HasValue)
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                                @context.Item.Appointment_Date.Value.ToString("MMM dd, yyyy")
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="text-muted">
+                                                @context.Item.Appointment_Date.Value.ToString("hh:mm tt")
+                                            </MudText>
+                                        </div>
+                                    }
+                                    else if(context.Item.Appointment_Status == "Cancelled" && !context.Item.Appointment_Date.HasValue)
+                                    {
+                                        <MudChip Color="Color.Error" Size="@Size.Small" Variant="@Variant.Outlined">
+                                            Cancelled
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip Color="Color.Warning" Size="@Size.Small" Variant="@Variant.Outlined">
+                                            Date Pending
+                                        </MudChip>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Doctor"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Doctor_First_Name)"
+                                            Style="min-width: 150px;">
+                                <CellTemplate>
+                                    @if (string.IsNullOrEmpty(context.Item.Doctor_First_Name) && context.Item.Appointment_Status == "Cancelled")
+                                    {
+                                    <MudChip Color="Color.Error" Size="@Size.Small" Variant="@Variant.Outlined">
+                                        Cancelled
+                                    </MudChip>
+                                    }
+                                    else if (string.IsNullOrEmpty(context.Item.Doctor_First_Name))
+                                    {
+                                        <MudChip Color="Color.Warning" Size="@Size.Small" Variant="@Variant.Outlined">
+                                            Pending Assignment
+                                        </MudChip>
+                                    }
+                                    else
+                                    {
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="font-weight-medium">
+                                                @context.Item.Doctor_First_Name @context.Item.Doctor_Last_Name
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="text-muted">
+                                                @context.Item.Doctor_Specialization
+                                            </MudText>
+                                        </div>
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Reason"
+                                            Sortable="false"
+                                            Style="min-width: 200px;">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2" Class="text-truncate" Style="max-width: 200px;">
+                                        @context.Item.Reason
+                                    </MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Status"
+                                            Sortable="true"
+                                            SortBy="@(x => x.Appointment_Status)"
+                                            Style="min-width: 120px;">
+                                <CellTemplate>
+                                    <MudChip Color="@GetStatusColor(context.Item.Appointment_Status)"
+                                             Size="@Size.Small"
+                                             Variant="@Variant.Filled">
+                                        @context.Item.Appointment_Status
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Actions"
+                                            Sortable="false"
+                                            Filterable="false"
+                                            Style="min-width: 100px;">
+                                <CellTemplate>
+                                    @if (context.Item.Appointment_Status == "Pending")
+                                    {
+                                        <MudButtonGroup Size="@Size.Small" Variant="@Variant.Outlined">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Color="Color.Primary"
+                                                           Size="@Size.Small"
+                                                           OnClick="@(() => EditAppointment(context.Item))"
+                                                           Title="Edit Appointment" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                                           Color="Color.Error"
+                                                           Size="@Size.Small"
+                                                           OnClick="@(() => CancelAppointment(context.Item))"
+                                                           Title="Cancel Appointment" />
+                                        </MudButtonGroup>
+                                    }
+                                    else if (context.Item.Appointment_Status == "Assigned")
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                                       Color="Color.Error"
+                                                       Size="@Size.Small"
+                                                       OnClick="@(() => CancelAppointment(context.Item))"
+                                                       Title="Cancel Appointment" />
+                                    }
+                                    else
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                       Color="Color.Default"
+                                                       Size="@Size.Small"
+                                                       OnClick="@(() => ViewAppointmentDetails(context.Item))"
+                                                       Title="View Details" />
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+
+                        <PagerContent>
+                            <MudDataGridPager T="PatientAppointmentsDTO" />
+                        </PagerContent>
+                        <NoRecordsContent>
+                            <div Class="d-flex flex-column align-center justify-center pa-8">
+                                <MudIcon Icon="@Icons.Material.Filled.EventBusy"
+                                         Size="@Size.Large"
+                                         Color="Color.Default"
+                                         Class="mb-4" />
+                                <MudText Typo="Typo.h6" Class="mb-2">No appointments found</MudText>
+                                <MudText Typo="Typo.body2" Class="text-muted mb-4">
+                                    You haven't booked any appointments yet.
+                                </MudText>
+                            </div>
+                        </NoRecordsContent>
+                    </MudDataGrid>
+                </div>
+                <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="false">
+                    <MudAlert Severity="Severity.Info"
+                              Variant="Variant.Text"
+                              Dense="true"
+                              Class="mt-2"
+                              Icon="@Icons.Material.Filled.TouchApp">
+                        <MudText Typo="Typo.caption">
+                            Swipe left/right to see all columns
+                        </MudText>
+                    </MudAlert>
+                </MudHidden>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<PatientAppointmentsDTO> appointments = new List<PatientAppointmentsDTO>();
+    private bool loading = true;
+    private List<Appointments> patientAppointments = new List<Appointments>();
+    private bool showBookDialog = false;
+    private bool showEditDialog = false;
+    private DialogOptions dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private Appointments createAppointment = new Appointments();
+    private Appointments editAppointment = new Appointments();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Patient" });
+        await LoadAppointments();
+    }
+
+    private async Task LoadAppointments()
+    {
+        loading = true;
+        appointments.Clear();
+        try
+        {
+            patientAppointments = await PatientService.GetAppointmentsAsync(AuthorizationService!.CurrentUser!.User_ID);
+
+            foreach (var appointment in patientAppointments)
+            {
+                appointments.Add(new PatientAppointmentsDTO
+                {
+                    Appointment_ID = appointment.Appointment_ID,
+                    Appointment_Date = appointment.Appointment_Date, 
+                    Appointment_Status = appointment.Appointment_Status ?? "Pending",
+                    Doctor_ID = appointment.Doctor_ID,
+                    Doctor_First_Name = appointment.Doctor?.User?.First_Name,
+                    Doctor_Last_Name = appointment.Doctor?.User?.Last_Name,
+                    Doctor_Specialization = appointment.Doctor?.Specialization,
+                    Extra_Information = appointment.Extra_Information,
+                    Reason = appointment.Reason
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading appointments: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Pending" => Color.Warning,
+            "Assigned" => Color.Info,
+            "Completed" => Color.Success,
+            "Cancelled" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private void OpenBookAppointmentDialog()
+    {
+        createAppointment = new Appointments
+        {
+            Reason = string.Empty,
+            Extra_Information = string.Empty
+        };
+
+        showBookDialog = true;
+        StateHasChanged();
+    }
+
+    private void CloseBookDialog()
+    {
+        showBookDialog = false;
+        StateHasChanged();
+    }
+
+    private void CloseEditDialog()
+    {
+        showEditDialog = false;
+        StateHasChanged();
+    }
+
+    private bool IsValidAppointment()
+    {
+        return !string.IsNullOrWhiteSpace(createAppointment.Reason);
+    }
+
+    private bool IsEditValidAppointment()
+    {
+        return !string.IsNullOrWhiteSpace(editAppointment.Reason);
+    }
+
+    private async Task CreateAppointment()
+    {
+        try
+        {
+            if (!IsValidAppointment())
+            {
+                Snackbar.Add("Please provide a reason for your visit", Severity.Warning);
+                return;
+            }
+
+            createAppointment.Appointment_Date = null;
+            createAppointment.Appointment_Status = "Pending";
+            createAppointment.Doctor_ID = null;
+
+            await PatientService.BookAppointmentAsync(AuthorizationService!.CurrentUser!.User_ID, createAppointment);
+
+            Snackbar.Add("Appointment request submitted successfully!", Severity.Success);
+            CloseBookDialog();
+            await LoadAppointments();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error booking appointment: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void EditAppointment(PatientAppointmentsDTO appointment)
+    {
+        editAppointment = new Appointments
+        {
+            Appointment_ID = appointment.Appointment_ID,
+            Reason = appointment.Reason,
+            Extra_Information = appointment.Extra_Information
+        };
+        showEditDialog = true;
+        StateHasChanged();
+    }
+
+    private async Task UpdateAppointment()
+    {
+        try
+        {
+            if (!IsEditValidAppointment())
+            {
+                Snackbar.Add("Please provide a reason for your visit", Severity.Warning);
+                return;
+            }
+
+            await PatientService.UpdateAppointmentAsync(editAppointment.Appointment_ID, editAppointment.Reason!, editAppointment.Extra_Information);
+
+            Snackbar.Add("Appointment updated successfully!", Severity.Success);
+            CloseEditDialog();
+            await LoadAppointments(); 
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating appointment: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CancelAppointment(PatientAppointmentsDTO appointment)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Cancel Appointment", "Are you sure you want to cancel your appointment?");
+
+        if (confirmed == true)
+        {
+            try
+            {
+               await PatientService.CancelAppointmentAsync(appointment.Appointment_ID);
+               Snackbar.Add("Appointment cancelled successfully", Severity.Success);
+
+                var localAppointment = appointments.FirstOrDefault(a => a.Appointment_ID == appointment.Appointment_ID);
+
+               await LoadAppointments();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error cancelling appointment: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private void ViewAppointmentDetails(PatientAppointmentsDTO appointment)
+    {
+        Snackbar.Add($"View details for appointment: {appointment.Appointment_ID}", Severity.Info);
+    }
+}

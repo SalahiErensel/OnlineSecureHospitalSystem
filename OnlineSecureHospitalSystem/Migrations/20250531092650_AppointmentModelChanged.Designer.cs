@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OnlineSecureHospitalSystem.Data;
 
@@ -10,9 +11,11 @@ using OnlineSecureHospitalSystem.Data;
 namespace OnlineSecureHospitalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250531092650_AppointmentModelChanged")]
+    partial class AppointmentModelChanged
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
@@ -23,13 +26,13 @@ namespace OnlineSecureHospitalSystem.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("Appointment_Date")
+                    b.Property<DateTime>("Appointment_Date")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Appointment_Status")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Doctor_ID")
+                    b.Property<int>("Doctor_ID")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Extra_Information")
@@ -258,7 +261,9 @@ namespace OnlineSecureHospitalSystem.Migrations
                 {
                     b.HasOne("OnlineSecureHospitalSystem.Data.Models.Doctors", "Doctor")
                         .WithMany()
-                        .HasForeignKey("Doctor_ID");
+                        .HasForeignKey("Doctor_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("OnlineSecureHospitalSystem.Data.Models.Patients", "Patient")
                         .WithMany()

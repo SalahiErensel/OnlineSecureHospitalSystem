@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using OnlineSecureHospitalSystem.Data;
 using OnlineSecureHospitalSystem.Data.Models;
-using System.Collections.Generic;
 
 namespace OnlineSecureHospitalSystem.Services.Doctor
 {
@@ -16,7 +15,7 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
 
         public async Task<List<Patients>> GetAllPatientsAsync()
         {
-            return await _appDbContext.Patients.Include(u=> u.User).ToListAsync();
+            return await _appDbContext.Patients.Include(u => u.User).ToListAsync();
         }
     }
 }
