@@ -50,6 +50,12 @@
                         Medical Information
                     </MudNavLink>
                 }
+                @if (authorizationService.IsInRole("Curing Doctor"))
+                {
+                    <MudNavLink Href="/doctor/curing-dashboard" Icon="@Icons.Material.Filled.Apps" Match="NavLinkMatch.All">
+                        Dashboard
+                    </MudNavLink>
+                }
                 <MudNavLink Href="/" Icon="@Icons.Material.Filled.Logout" Match="NavLinkMatch.All">
                     Logout
                 </MudNavLink>

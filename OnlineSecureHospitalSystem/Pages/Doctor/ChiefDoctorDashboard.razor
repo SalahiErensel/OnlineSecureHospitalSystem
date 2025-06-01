@@ -711,7 +711,7 @@
 
             await DoctorService.AssignCuringDoctorAsync(assignments);
 
-            Snackbar.Add($"Curing Doctor {currentDoctor!.User!.First_Name} {currentDoctor.User.Last_Name} successfully to {selectedAppointment!.Patient!.User!.First_Name} {selectedAppointment.Patient.User.Last_Name}", Severity.Success);
+            Snackbar.Add($"Curing Doctor {currentDoctor!.User!.First_Name} {currentDoctor.User.Last_Name} successfully assigned to patient {selectedAppointment!.Patient!.User!.First_Name} {selectedAppointment.Patient.User.Last_Name}", Severity.Success);
 
             CloseAssignDialog();
 
@@ -721,11 +721,6 @@
         {
             Snackbar.Add($"Error assigning doctor: {ex.Message}", Severity.Error);
         }
-    }
-
-    private void ViewPatientHistory(int patientId)
-    {
-        NavigationManager.NavigateTo($"/chief-doctor/patient/{patientId}/medical-records");
     }
 
     private async Task RefreshData()
