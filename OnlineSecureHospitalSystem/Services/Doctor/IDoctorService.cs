@@ -27,6 +27,7 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
         Task<int> GetCompletedAppointmentsCountAsync(int doctorId);
         Task<int> GetPatientsCountAsync(int doctorId);
         Task<int> GetMedicalRecordsCountAsync(int doctorId);
-
+        Task<List<Doctors>> GetConsultingDoctorsAsync();
+        Task<bool> AssignConsultingDoctorAsync(int patientId, int assignerCuringDoctorId, int consultingDoctorId);
     }
 }

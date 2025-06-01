@@ -247,5 +247,33 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .Where(mr => mr.Curing_Doctor_ID == doctorId)
                 .CountAsync();
         }
+
+        public async Task<List<Doctors>> GetConsultingDoctorsAsync()
+        {
+            return await _appDbContext.Doctors
+              .Include(u => u.User)
+              .Where(d => d.User!.Role_ID == 5)
+              .ToListAsync();
+        }
+
+        public async Task<bool> AssignConsultingDoctorAsync(int patientId, int assignerCuringDoctorId, int consultingDoctorId)
+        {
+            try
+            {
+                var assignment = new Assignments
+                {
+                    Patient_ID = patientId,
+                    Curing_Doctor_ID = consultingDoctorId,
+                    Assigned_By = assignerCuringDoctorId
+                };
+                _appDbContext.Assignments.Add(assignment);
+                await _appDbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        } 
     }
 }

@@ -1122,8 +1122,7 @@
     {
         try
         {
-            // Load all doctors except current doctor for consulting assignments
-            // consultingDoctors = await DoctorService.GetAllDoctorsExceptCurrentAsync(currentDoctor?.Doctor_ID ?? 0);
+            consultingDoctors = await DoctorService.GetConsultingDoctorsAsync();
         }
         catch (Exception ex)
         {
@@ -1572,8 +1571,19 @@
                 return;
             }
 
-            // Implementation for consulting doctor assignment
+            
             var consultingDoctor = consultingDoctors.FirstOrDefault(d => d.Doctor_ID == selectedConsultingDoctorId);
+
+            var result = await DoctorService.AssignConsultingDoctorAsync(
+                selectedPatientForConsulting.Patient_ID,
+                consultingDoctor!.Doctor_ID,
+                currentDoctor.Doctor_ID
+            );
+            if (!result)
+            {
+                Snackbar.Add("Failed to assign consulting doctor", Severity.Error);
+                return;
+            }
             Snackbar.Add($"Consulting doctor {consultingDoctor?.User?.First_Name} {consultingDoctor?.User?.Last_Name} assigned successfully", Severity.Success);
 
             CloseAssignConsultingDialog();
