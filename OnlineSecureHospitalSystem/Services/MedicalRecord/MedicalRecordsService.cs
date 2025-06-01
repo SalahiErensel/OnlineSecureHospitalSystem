@@ -67,7 +67,6 @@ namespace OnlineSecureHospitalSystem.Services.MedicalRecord
         {
             try
             {
-                // Verify the appointment exists, is completed, and belongs to this doctor
                 var appointment = await _appDbContext.Appointments
                     .FirstOrDefaultAsync(a => a.Appointment_ID == medicalRecord.Appointment_ID
                                             && a.Doctor_ID == medicalRecord.Curing_Doctor_ID
@@ -76,12 +75,11 @@ namespace OnlineSecureHospitalSystem.Services.MedicalRecord
                 if (appointment == null)
                     return false;
 
-                // Check if medical record already exists for this appointment
                 var existingRecord = await _appDbContext.MedicalRecords
                     .FirstOrDefaultAsync(mr => mr.Appointment_ID == medicalRecord.Appointment_ID);
 
                 if (existingRecord != null)
-                    return false; // Record already exists
+                    return false;
 
                 _appDbContext.MedicalRecords.Add(medicalRecord);
                 await _appDbContext.SaveChangesAsync();
@@ -93,7 +91,6 @@ namespace OnlineSecureHospitalSystem.Services.MedicalRecord
             }
         }
 
-        // NEW: Update medical record for specific appointment (only by the doctor who created it)
         public async Task<bool> UpdateMedicalRecordAsync(int appointmentId, int doctorId, byte[] encryptedData, string signature, bool isSensitive)
         {
             try
@@ -117,8 +114,6 @@ namespace OnlineSecureHospitalSystem.Services.MedicalRecord
                 return false;
             }
         }
-
-        // NEW: Get count of medical records created by doctor
         public async Task<int> GetMedicalRecordsCountByDoctorAsync(int doctorId)
         {
             return await _appDbContext.MedicalRecords

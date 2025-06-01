@@ -36,7 +36,7 @@ namespace OnlineSecureHospitalSystem.Services.Admin
                 Last_Name = user.Last_Name,
                 Phone_Number = user.Phone_Number,
                 Email = user.Email,
-                Password = "123456", //This will be hashed later
+                Password = "123456", //Default password
                 Username = user.Username,
                 IsDefaultPassword = 1,
                 Role_ID = user.Role_ID
@@ -53,7 +53,7 @@ namespace OnlineSecureHospitalSystem.Services.Admin
             if (new[] { 3, 4, 5 }.Contains(user.Role_ID))
             {
                 int isChiefDoctor = user.Role_ID == 3 ? 1 : 0;
-
+                //If the user is a chief doctor, set Is_Chief to 1, otherwise 0
                 var doctor = new Doctors
                 {
                     User_ID = newUser.User_ID,
@@ -66,6 +66,7 @@ namespace OnlineSecureHospitalSystem.Services.Admin
 
             if (new[] { 6 }.Contains(user.Role_ID))
             {
+                //If the user is a patient, set the date of birth
                 var patient = new Patients
                 {
                     User_ID = newUser.User_ID,

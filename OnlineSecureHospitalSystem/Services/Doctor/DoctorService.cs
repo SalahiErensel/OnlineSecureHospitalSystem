@@ -78,7 +78,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
             return await _appDbContext.Doctors.Include(u => u.User).FirstOrDefaultAsync(d => d.User_ID == userId);
         }
 
-        // UPDATED: Changed from assignments to appointments-based approach
         public async Task<List<Assignments>> GetAssignmentByDoctorIdAsync(int doctorId)
         {
             return await _appDbContext.Assignments
@@ -88,19 +87,15 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .ToListAsync();
         }
 
-        // Get appointments by doctor and status through assignments
         public async Task<List<Appointments>> GetAppointmentsByDoctorAndStatusAsync(int doctorId, string status)
         {
-            // For pending appointments, we need to look through assignments since Doctor_ID is not set yet
             if (status == "Pending")
             {
-                //Get patient IDs that are assigned to this doctor
                 var assignedPatientIds = await _appDbContext.Assignments
                     .Where(a => a.Doctor_ID == doctorId)
                     .Select(a => a.Patient_ID)
                     .ToListAsync();
 
-                // Get pending appointments for these assigned patients
                 return await _appDbContext.Appointments
                     .Where(a => assignedPatientIds.Contains(a.Patient_ID) && a.Appointment_Status == status)
                     .Include(a => a.Patient).ThenInclude(p => p!.User)
@@ -109,7 +104,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
             }
             else
             {
-                // For scheduled and completed appointments, Doctor_ID should be set
                 return await _appDbContext.Appointments
                     .Where(a => a.Doctor_ID == doctorId && a.Appointment_Status == status)
                     .Include(a => a.Patient).ThenInclude(p => p!.User)
@@ -118,7 +112,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
             }
         }
 
-        // NEW: Get all appointments for this doctor
         public async Task<List<Appointments>> GetAllAppointmentsByDoctorAsync(int doctorId)
         {
             return await _appDbContext.Appointments
@@ -128,7 +121,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .ToListAsync();
         }
 
-        // NEW: Get patients from completed appointments (replaces assignment-based patients)
         public async Task<List<Patients>> GetPatientsByDoctorAsync(int doctorId)
         {
             var patientIds = await _appDbContext.Appointments
@@ -143,7 +135,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .ToListAsync();
         }
 
-        // NEW: Schedule an appointment (Pending -> Scheduled)
         public async Task<bool> ScheduleAppointmentAsync(int appointmentId, DateTime scheduledDateTime)
         {
             try
@@ -151,13 +142,11 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 var appointment = await _appDbContext.Appointments.FindAsync(appointmentId);
                 if (appointment == null) return false;
 
-                // Find the assignment for this patient to get the doctor ID
                 var assignment = await _appDbContext.Assignments
                     .FirstOrDefaultAsync(a => a.Patient_ID == appointment.Patient_ID);
 
                 if (assignment == null) return false;
 
-                // Update the appointment with doctor ID, date/time, and status
                 appointment.Doctor_ID = assignment.Doctor_ID;
                 appointment.Appointment_Date = scheduledDateTime;
                 appointment.Appointment_Status = "Scheduled";
@@ -171,7 +160,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
             }
         }
 
-        // NEW: Complete an appointment (Scheduled -> Completed)
         public async Task<bool> CompleteAppointmentAsync(int appointmentId)
         {
             try
@@ -189,8 +177,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 return false;
             }
         }
-
-        // NEW: Get appointments for a specific patient with this doctor
         public async Task<List<Appointments>> GetPatientAppointmentsWithDoctorAsync(int patientId, int doctorId)
         {
             return await _appDbContext.Appointments
@@ -207,7 +193,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .Select(a => a.Appointment_Date)
                 .FirstOrDefaultAsync();
         }
-
         public async Task<int> GetPendingAppointmentsCountAsync(int doctorId)
         {
             // Get patient IDs assigned to this doctor
@@ -227,14 +212,12 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .Where(a => a.Doctor_ID == doctorId && a.Appointment_Status == "Scheduled")
                 .CountAsync();
         }
-
         public async Task<int> GetCompletedAppointmentsCountAsync(int doctorId)
         {
             return await _appDbContext.Appointments
                 .Where(a => a.Doctor_ID == doctorId && a.Appointment_Status == "Completed")
                 .CountAsync();
         }
-
         public async Task<int> GetPatientsCountAsync(int doctorId)
         {
             // Get unique patient IDs from both assignments (pending) and appointments (scheduled/completed)
@@ -251,7 +234,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
             var allPatientIds = assignedPatientIds.Union(appointmentPatientIds).Distinct();
             return allPatientIds.Count();
         }
-
         public async Task<int> GetMedicalRecordsCountAsync(int doctorId)
         {
             return await _appDbContext.MedicalRecords
@@ -286,7 +268,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 return false;
             }
         }
-
         public async Task<List<Assignments>> GetConsultingAssignmentsForDoctorAsync(int consultingDoctorId)
         {
             return await _appDbContext.Assignments
@@ -309,7 +290,6 @@ namespace OnlineSecureHospitalSystem.Services.Doctor
                 .FirstOrDefaultAsync(d => d.Doctor_ID == doctorId);
         }
 
-        // Add this implementation to your MedicalRecordsService class:
         public async Task<int> GetMedicalRecordsCountByPatientAsync(int patientId)
         {
             return await _appDbContext.MedicalRecords

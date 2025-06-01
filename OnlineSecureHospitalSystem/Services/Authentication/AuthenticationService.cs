@@ -11,7 +11,6 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
         private readonly AppDbContext _appDbContext;
         private readonly IPasswordHasher<Users> _passwordHasher;
 
-        //Constructor
         public AuthenticationService(AppDbContext appDbContext, IPasswordHasher<Users> passwordHasher)
         {
             _appDbContext = appDbContext;
@@ -34,7 +33,7 @@ namespace OnlineSecureHospitalSystem.Services.Authentication
 
             if(existingUser.User_ID == 1)
             {
-                //If the user is the default admin, return immediately
+                //If the user is the default created admin, return immediately
                 return new AuthenticatedUser
                 {
                     User_ID = existingUser.User_ID,

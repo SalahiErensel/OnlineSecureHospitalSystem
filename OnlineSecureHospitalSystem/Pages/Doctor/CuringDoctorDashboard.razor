@@ -1,6 +1,7 @@
 ﻿@page "/doctor/curing-dashboard"
 @using OnlineSecureHospitalSystem.Data.DTO
 @using OnlineSecureHospitalSystem.Data.Models
+@using OnlineSecureHospitalSystem.Services
 @using OnlineSecureHospitalSystem.Services.Authorization
 @using OnlineSecureHospitalSystem.Services.Doctor
 @using OnlineSecureHospitalSystem.Services.MedicalRecord
@@ -14,7 +15,6 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<!-- Schedule Appointment Dialog -->
 <MudDialog @bind-Visible="showScheduleAppointmentDialog" Options="scheduleAppointmentDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -70,7 +70,6 @@
     </DialogActions>
 </MudDialog>
 
-<!-- Create Medical Record Dialog -->
 <MudDialog @bind-Visible="showCreateRecordDialog" Options="createRecordDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -134,7 +133,6 @@
     </DialogActions>
 </MudDialog>
 
-<!-- Update Medical Record Dialog -->
 <MudDialog @bind-Visible="showUpdateRecordDialog" Options="updateRecordDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -198,7 +196,6 @@
     </DialogActions>
 </MudDialog>
 
-<!-- View Single Appointment Medical Record Dialog -->
 <MudDialog @bind-Visible="showViewAppointmentRecordDialog" Options="viewAppointmentRecordDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -272,7 +269,6 @@
     </DialogActions>
 </MudDialog>
 
-<!-- View All Medical Records Dialog -->
 <MudDialog @bind-Visible="showViewRecordsDialog" Options="viewRecordsDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -383,7 +379,6 @@
     </DialogActions>
 </MudDialog>
 
-<!-- Assign Consulting Doctor Dialog -->
 <MudDialog @bind-Visible="showAssignConsultingDialog" Options="assignConsultingDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -467,7 +462,6 @@
         </MudGrid>
     </MudPaper>
 
-    <!-- Statistics Cards -->
     <MudGrid>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="mud-height-full">
@@ -506,8 +500,6 @@
             </MudCard>
         </MudItem>
     </MudGrid>
-
-    <!-- Pending Appointments Section -->
     <MudGrid Class="mt-4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
@@ -592,8 +584,6 @@
             </MudPaper>
         </MudItem>
     </MudGrid>
-
-    <!-- Scheduled Appointments Section -->
     <MudGrid Class="mt-4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
@@ -664,11 +654,9 @@
                                         </CellTemplate>
                                     </TemplateColumn>
                                 </Columns>
-
                                 <PagerContent>
                                     <MudDataGridPager T="Appointments" />
                                 </PagerContent>
-
                                 <NoRecordsContent>
                                     <div Class="d-flex flex-column align-center justify-center pa-8">
                                         <MudIcon Icon="@Icons.Material.Filled.Schedule"
@@ -688,8 +676,6 @@
             </MudPaper>
         </MudItem>
     </MudGrid>
-
-    <!-- Completed Appointments Section -->
     <MudGrid Class="mt-4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
@@ -802,8 +788,6 @@
             </MudPaper>
         </MudItem>
     </MudGrid>
-
-    <!-- My Patients Section -->
     <MudGrid Class="mt-4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
@@ -937,32 +921,32 @@
 </MudContainer>
 
 @code {
-    private List<Appointments> pendingAppointments = new(); // Appointments assigned but not scheduled
-    private List<Appointments> scheduledAppointments = new(); // Appointments scheduled for specific times
-    private List<Appointments> completedAppointments = new(); // Appointments that happened (can create medical records)
-    private List<Patients> myPatients = new(); // Patients from all appointments with this doctor
+    private List<Appointments> pendingAppointments = new(); //Appointments assigned but not scheduled
+    private List<Appointments> scheduledAppointments = new(); //Appointments scheduled for specific times
+    private List<Appointments> completedAppointments = new(); //Appointments that happened
+    private List<Patients> myPatients = new(); //Patients from all appointments with this doctor
     private List<Doctors> consultingDoctors = new();
     private List<PatientMedicalRecordDTO> viewingPatientRecords = new();
 
-    // Dictionaries for caching data
+    //Dictionaries for caching data
     private Dictionary<int, bool> appointmentMedicalRecordStatus = new();
     private Dictionary<int, DateTime?> patientLastAppointments = new();
 
-    // Loading states
+    //Loading states
     private bool loadingPendingAppointments = true;
     private bool loadingScheduledAppointments = true;
     private bool loadingCompletedAppointments = true;
     private bool loadingPatients = true;
     private bool loadingPatientRecords = false;
 
-    // Statistics
+    //Statistics
     private int pendingAppointmentsCount = 0;
     private int scheduledAppointmentsCount = 0;
     private int completedAppointmentsCount = 0;
     private int totalPatientsCount = 0;
     private int totalMedicalRecordsCount = 0;
 
-    // Dialog states
+    //Dialog states
     private bool showScheduleAppointmentDialog = false;
     private bool showCreateRecordDialog = false;
     private bool showUpdateRecordDialog = false;
@@ -970,7 +954,7 @@
     private bool showViewAppointmentRecordDialog = false;
     private bool showAssignConsultingDialog = false;
 
-    // Dialog options
+    //Dialog options
     private DialogOptions scheduleAppointmentDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private DialogOptions createRecordDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     private DialogOptions updateRecordDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -978,13 +962,13 @@
     private DialogOptions viewAppointmentRecordDialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
     private DialogOptions assignConsultingDialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-    // Selected data for dialogs
+    //Selected data for dialogs
     private Appointments? selectedAppointmentToSchedule;
     private Appointments? selectedAppointmentForRecord;
     private Patients? selectedPatientForConsulting;
     private MedicalRecords? existingMedicalRecord;
 
-    // Form data
+    //Form data
     private DateTime scheduledDateTime = DateTime.Now.AddDays(1);
     private int selectedAppointmentId;
     private string medicalRecordContent = "";
@@ -992,14 +976,16 @@
     private bool isUpdatingRecord = false;
     private int selectedConsultingDoctorId;
 
-    // Current doctor info
+    //Current doctor info
     private Doctors? currentDoctor;
 
+    //Appointment scheduling date and time
     private DateTime? scheduledDate = DateTime.Today.AddDays(1);
     private TimeSpan? scheduledTime = new TimeSpan(9, 0, 0);
 
     protected override async Task OnInitializedAsync()
     {
+        //Ensure user has access to this page
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Curing Doctor" });
         await LoadCurrentDoctor();
         await LoadDashboardData();
@@ -1028,12 +1014,12 @@
             LoadStatistics()
         );
 
-        // Load additional data after main data is loaded
+        //Load additional data after main data is loaded
         await LoadMedicalRecordStatuses();
         await LoadPatientLastAppointments();
     }
 
-    // Load appointments that are assigned to this doctor but not yet scheduled
+    //Load appointments that are assigned to this doctor but not yet scheduled
     private async Task LoadPendingAppointments()
     {
         loadingPendingAppointments = true;
@@ -1054,7 +1040,7 @@
         }
     }
 
-    // Load appointments that are scheduled for specific times
+    //Load appointments that are scheduled for specific times
     private async Task LoadScheduledAppointments()
     {
         loadingScheduledAppointments = true;
@@ -1075,7 +1061,7 @@
         }
     }
 
-    // Load appointments that are completed (can create medical records for these)
+    //Load appointments that are completed
     private async Task LoadCompletedAppointments()
     {
         loadingCompletedAppointments = true;
@@ -1096,7 +1082,7 @@
         }
     }
 
-    // Load patients who have had appointments with this doctor
+    //Load patients who have had appointments with this doctor
     private async Task LoadMyPatients()
     {
         loadingPatients = true;
@@ -1117,6 +1103,7 @@
         }
     }
 
+    //Load consulting doctors available for assignment
     private async Task LoadConsultingDoctors()
     {
         try
@@ -1148,7 +1135,7 @@
         }
     }
 
-    // Load medical record status for completed appointments
+    //Load medical record status for completed appointments
     private async Task LoadMedicalRecordStatuses()
     {
         appointmentMedicalRecordStatus.Clear();
@@ -1166,7 +1153,7 @@
         }
     }
 
-    // Load last appointment dates for patients
+    //Load last appointment dates for patients
     private async Task LoadPatientLastAppointments()
     {
         patientLastAppointments.Clear();
@@ -1191,7 +1178,6 @@
     {
         selectedAppointmentToSchedule = appointment;
 
-        // Initialize date to tomorrow and time to 9 AM
         scheduledDate = DateTime.Today.AddDays(1);
         scheduledTime = new TimeSpan(9, 0, 0);
 
@@ -1216,14 +1202,13 @@
                 return;
             }
 
-            // Combine date and time
+            //Combine date and time
             if (!scheduledDate.HasValue || !scheduledTime.HasValue)
             {
                 Snackbar.Add("Please select both date and time", Severity.Warning);
                 return;
             }
 
-            // Properly combine the date and time
             var combinedDateTime = scheduledDate.Value.Date + scheduledTime.Value;
 
             var success = await DoctorService.ScheduleAppointmentAsync(selectedAppointmentToSchedule.Appointment_ID, combinedDateTime);
@@ -1232,7 +1217,7 @@
             {
                 Snackbar.Add("Appointment scheduled successfully", Severity.Success);
                 CloseScheduleAppointmentDialog();
-                await LoadDashboardData(); // Refresh all data
+                await LoadDashboardData();
             }
             else
             {
@@ -1246,7 +1231,7 @@
     }
 
 
-    // Complete a scheduled appointment (Scheduled -> Completed)
+    //Complete a scheduled appointment (Scheduled -> Completed)
     private async Task CompleteAppointment(Appointments appointment)
     {
         try
@@ -1256,7 +1241,7 @@
             if (success)
             {
                 Snackbar.Add("Appointment marked as completed", Severity.Success);
-                await LoadDashboardData(); // Refresh all data
+                await LoadDashboardData();
             }
             else
             {
@@ -1273,16 +1258,16 @@
     {
         selectedAppointmentForRecord = appointment;
 
-        // Check if medical record already exists for this appointment
+        //Check if medical record already exists for this appointment
         existingMedicalRecord = await MedicalRecordsService.GetMedicalRecordByAppointmentIdAsync(appointment.Appointment_ID);
 
         if (existingMedicalRecord != null)
         {
-            // Update mode
+            //Update mode
             isUpdatingRecord = true;
             selectedAppointmentId = appointment.Appointment_ID;
 
-            // Decrypt existing medical record
+            //Decrypt existing medical record
             try
             {
                 medicalRecordContent = DecryptMedicalRecord(existingMedicalRecord.Record_Data!);
@@ -1299,11 +1284,11 @@
         }
         else
         {
-            // Create mode - IMPORTANT: Reset the checkbox value
+            //Create mode
             isUpdatingRecord = false;
             selectedAppointmentId = appointment.Appointment_ID;
             medicalRecordContent = "";
-            isSensitiveRecord = false; // Ensure this is reset to false for new records
+            isSensitiveRecord = false;
 
             showCreateRecordDialog = true;
         }
@@ -1341,10 +1326,7 @@
                 return;
             }
 
-            // Debug logging
-            Console.WriteLine($"SaveMedicalRecord - Is Sensitive: {isSensitiveRecord}");
-
-            // Encrypt the medical record content
+            //Encrypt the medical record content
             byte[] encryptedData = EncryptMedicalRecord(medicalRecordContent);
             string signature = CreateDigitalSignature(medicalRecordContent);
 
@@ -1352,10 +1334,8 @@
 
             if (isUpdatingRecord)
             {
-                // Debug log for update
-                Console.WriteLine($"Updating medical record with Is_Sensitive = {isSensitiveRecord}");
 
-                // Update existing medical record
+                //Update existing medical record
                 success = await MedicalRecordsService.UpdateMedicalRecordAsync(
                     selectedAppointmentForRecord.Appointment_ID,
                     currentDoctor.Doctor_ID,
@@ -1376,7 +1356,7 @@
             }
             else
             {
-                // Create new medical record
+                //Create new medical record
                 var medicalRecord = new MedicalRecords
                 {
                     Curing_Doctor_ID = currentDoctor.Doctor_ID,
@@ -1386,9 +1366,6 @@
                     Signature = signature,
                     Is_Sensitive = isSensitiveRecord
                 };
-
-                // Debug log for create
-                Console.WriteLine($"Creating medical record with Is_Sensitive = {medicalRecord.Is_Sensitive}");
 
                 success = await MedicalRecordsService.CreateMedicalRecordAsync(medicalRecord);
 
@@ -1405,8 +1382,8 @@
 
             if (success)
             {
-                await LoadMedicalRecordStatuses(); // Refresh medical record statuses
-                await LoadDashboardData(); // Refresh all data
+                await LoadMedicalRecordStatuses();
+                await LoadDashboardData();
             }
         }
         catch (Exception ex)
@@ -1415,7 +1392,7 @@
         }
     }
 
-    // View medical record for a specific appointment
+    //View medical record for a specific appointment
     private async Task ViewAppointmentMedicalRecord(Appointments appointment)
     {
         selectedAppointmentForRecord = appointment;
@@ -1441,7 +1418,7 @@
                     decryptedResult = "Unable to decrypt medical record";
                 }
 
-                // Clear previous records and add this single appointment's record
+                //Clear previous records and add this single appointment's record
                 viewingPatientRecords.Clear();
                 viewingPatientRecords.Add(new PatientMedicalRecordDTO
                 {
@@ -1480,7 +1457,7 @@
         StateHasChanged();
     }
 
-    // View all medical records created by this doctor
+    //View all medical records created by this doctor
     private async Task ViewMyMedicalRecords()
     {
         loadingPatientRecords = true;
@@ -1541,7 +1518,6 @@
         StateHasChanged();
     }
 
-    // Consulting doctor methods
     private void OpenAssignConsultingDialog(Patients patient)
     {
         selectedPatientForConsulting = patient;
@@ -1585,6 +1561,7 @@
                 Snackbar.Add("Failed to assign consulting doctor", Severity.Error);
                 return;
             }
+
             Snackbar.Add($"Consulting doctor {consultingDoctor?.User?.First_Name} {consultingDoctor?.User?.Last_Name} assigned successfully", Severity.Success);
 
             CloseAssignConsultingDialog();
@@ -1596,12 +1573,12 @@
         }
     }
 
-    // Encryption and decryption methods
+    //Encryption and decryption methods
     private byte[] EncryptMedicalRecord(string plainText)
     {
         try
         {
-            string key = "HOSPITAL"; // 8-character key for DES
+            string key = "HOSPITAL"; //8-character key for DES
             return DESEncrypt(plainText, key);
         }
         catch (Exception ex)
@@ -1614,7 +1591,7 @@
     {
         try
         {
-            string key = "HOSPITAL"; // 8-character key for DES
+            string key = "HOSPITAL"; //8-character key for DES
             return DESDecrypt(encryptedData, key);
         }
         catch (Exception ex)
@@ -1677,14 +1654,11 @@
     {
         try
         {
-            // Create SHA-256 hash of the content
+            //Create SHA-256 hash of the content
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] contentBytes = Encoding.UTF8.GetBytes(content);
                 byte[] hashBytes = sha256.ComputeHash(contentBytes);
-
-                // In a real implementation, you would use RSA to sign this hash
-                // For now, we'll just return the hash as base64 string
                 return Convert.ToBase64String(hashBytes);
             }
         }
@@ -1711,8 +1685,6 @@
     private void OnSensitiveRecordChanged(bool value)
     {
         isSensitiveRecord = value;
-        Snackbar.Add("Checkbox changed to" + isSensitiveRecord, Severity.Success);
-
         StateHasChanged();
     }
 }

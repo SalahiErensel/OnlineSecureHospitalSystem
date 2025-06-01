@@ -316,6 +316,7 @@
         await LoadAppointments();
     }
 
+    //Method to load appointments for the current patient
     private async Task LoadAppointments()
     {
         loading = true;
@@ -350,6 +351,7 @@
         }
     }
 
+    //Method to get color based on appointment status
     private Color GetStatusColor(string status)
     {
         return status switch

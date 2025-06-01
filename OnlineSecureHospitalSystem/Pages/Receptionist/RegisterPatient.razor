@@ -77,6 +77,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        //Ensure the user has the required role to access this page
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: new[] { "Receptionist" });
     }
 

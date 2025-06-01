@@ -8,7 +8,6 @@ namespace OnlineSecureHospitalSystem.Services.Patient
         Task<Patients?> GetPatientByUserIdAsync(int userId);
         Task<bool> BookAppointmentAsync(int userId, Appointments appointment);
         Task<bool> UpdateAppointmentAsync(int appointmentId, string reason, string extraInformation);
-
         Task<bool> CancelAppointmentAsync(int appointmentId);
     }
 }

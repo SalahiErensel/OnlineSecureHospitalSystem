@@ -172,6 +172,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        //Ensure the user is authenticated and has the correct role
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Patient" });
         await LoadMedicalRecords();
     }
@@ -232,7 +233,7 @@
     {
         try
         {
-            string key = "HOSPITAL"; // 8-character key for DES
+            string key = "HOSPITAL"; //8-character key for DES
             return DESDecrypt(encryptedData, key);
         }
         catch (Exception ex)
@@ -265,29 +266,4 @@
             return $"Failed to decrypt: {ex.Message}";
         }
     }
-
-    // private byte[] DESEncrypt(string plainText, string key)
-    // {
-    //     try
-    //     {
-    //         byte[] keyBytes = Encoding.UTF8.GetBytes(key.PadRight(8).Substring(0, 8));
-    //         byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-
-    //         using (DES des = DES.Create())
-    //         {
-    //             des.Key = keyBytes;
-    //             des.Mode = CipherMode.ECB;
-    //             des.Padding = PaddingMode.PKCS7;
-
-    //             using (ICryptoTransform encryptor = des.CreateEncryptor())
-    //             {
-    //                 return encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-    //             }
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         throw new Exception($"Encryption failed: {ex.Message}");
-    //     }
-    // }
 }

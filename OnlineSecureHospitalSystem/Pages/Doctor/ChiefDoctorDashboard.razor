@@ -460,10 +460,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        //Check if the user has the required role for this page
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Chief Doctor" });
         await LoadDashboardData();
     }
 
+    //Load all necessary data for the dashboard
     private async Task LoadDashboardData()
     {
         await Task.WhenAll(
@@ -474,6 +476,7 @@
         );
     }
 
+    //Load all patients and their details
     private async Task GetAllPatients()
     {
         try
@@ -501,6 +504,7 @@
         }
     }
 
+    //Load pending appointments for assignment
     private async Task LoadPendingAppointments()
     {
         loadingAppointments = true;
@@ -519,6 +523,7 @@
         }
     }
 
+    //Load available doctors for assignment
     private async Task LoadAvailableDoctors()
     {
         loadingDoctors = true;
@@ -536,6 +541,7 @@
         }
     }
 
+    //Load statistics for the dashboard
     private async Task LoadStatistics()
     {
         try
@@ -575,13 +581,15 @@
 
         try
         {
+            //Find the patient entity in the list
             var patientEntity = patientList.FirstOrDefault(p =>
                 p.User!.First_Name == patient.First_Name &&
                 p.User.Last_Name == patient.Last_Name);
 
             if (patientEntity != null)
             {
-                 var medicalRecords = await MedicalRecordsService.GetMedicalRecordsByPatientIdAsync(patientEntity.Patient_ID);
+                //Load medical records for the selected patient
+                var medicalRecords = await MedicalRecordsService.GetMedicalRecordsByPatientIdAsync(patientEntity.Patient_ID);
 
                 foreach (var record in medicalRecords)
                 {
@@ -591,6 +599,7 @@
                     {
                         try
                         {
+                            //Decrypt the medical record data
                             decryptedResult = DecryptMedicalRecord(record.Record_Data);
                         }
                         catch
@@ -637,6 +646,7 @@
         StateHasChanged();
     }
 
+    //Decrypt the medical record data using DES encryption
     private string DecryptMedicalRecord(byte[] encryptedData)
     {
         try
@@ -654,6 +664,7 @@
     {
         try
         {
+            //Ensure the key is exactly 8 bytes long for DES
             byte[] keyBytes = Encoding.UTF8.GetBytes(key.PadRight(8).Substring(0, 8));
 
             using (DES des = DES.Create())
@@ -664,6 +675,7 @@
 
                 using (ICryptoTransform decryptor = des.CreateDecryptor())
                 {
+                    //Decrypt the data
                     byte[] decryptedBytes = decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
                     return Encoding.UTF8.GetString(decryptedBytes);
                 }
@@ -690,6 +702,7 @@
                 return;
             }
 
+            //Get the current doctor who is assigning
             var currentDoctor = await DoctorService.GetDoctorByUserIdAsync(AuthorizationService!.CurrentUser!.User_ID);
 
             assignments.Doctor_ID = selectedDoctorId;
@@ -697,6 +710,7 @@
             assignments.Assigned_By = currentDoctor!.Doctor_ID;
             assignments.Patient_ID = selectedAppointment.Patient_ID;
 
+            //Assigning the doctor to the selected appointment and patient
             await DoctorService.AssignCuringDoctorAsync(assignments);
 
             Snackbar.Add("Successfully Assigned");

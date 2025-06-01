@@ -24,8 +24,6 @@ namespace OnlineSecureHospitalSystem.Data
 
         public DbSet<MedicalRecords> MedicalRecords { get; set; }
 
-        public DbSet<Logs> Logs { get; set; }
-
         //Creating default roles and admin user
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

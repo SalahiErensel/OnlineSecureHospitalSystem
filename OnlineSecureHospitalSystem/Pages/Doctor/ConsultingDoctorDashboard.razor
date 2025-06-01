@@ -35,8 +35,6 @@
             </MudItem>
         </MudGrid>
     </MudPaper>
-
-    <!-- Statistics Cards -->
     <MudGrid>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="mud-height-full">
@@ -75,8 +73,6 @@
             </MudCard>
         </MudItem>
     </MudGrid>
-
-    <!-- Consulting Patients Section -->
     <MudGrid Class="mt-4">
         <MudItem xs="12">
             <MudPaper Class="pa-4">
@@ -112,7 +108,7 @@
                         else
                         {
                             <div style="overflow-x: auto; width: 100%;">
-                                <MudDataGrid T="ConsultingPatientInfo"
+                                <MudDataGrid T="ConsultingPatientInfoDTO"
                                              Items="@consultingPatients"
                                              Sortable="true"
                                              Groupable="false"
@@ -200,7 +196,7 @@
                                     </Columns>
 
                                     <PagerContent>
-                                        <MudDataGridPager T="ConsultingPatientInfo" />
+                                        <MudDataGridPager T="ConsultingPatientInfoDTO" />
                                     </PagerContent>
                                 </MudDataGrid>
                             </div>
@@ -211,8 +207,6 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
-
-<!-- View Medical Records Dialog -->
 <MudDialog @bind-Visible="showViewRecordsDialog" Options="viewRecordsDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">
@@ -325,21 +319,15 @@
 </MudDialog>
 
 @code {
-    // Helper class to store patient info with assignment details
-    public class ConsultingPatientInfo
-    {
-        public int Patient_ID { get; set; }
-        public int Assigned_By { get; set; }
-        public Patients? Patient { get; set; }
-    }
-
-    private List<ConsultingPatientInfo> consultingPatients = new();
+    //Helper class to store patient info with assignment details
+    private List<ConsultingPatientInfoDTO> consultingPatients = new();
     private List<PatientMedicalRecordDTO> viewingPatientRecords = new();
     private List<Doctors> assignedByCuringDoctors = new();
     private Dictionary<int, int> patientRecordCounts = new();
+    public ConsultingPatientInfoDTO consultingPatientInfo = new();
 
     private Doctors? currentDoctor;
-    private ConsultingPatientInfo? selectedPatientInfo;
+    private ConsultingPatientInfoDTO? selectedPatientInfo;
 
     private bool loadingPatients = true;
     private bool loadingPatientRecords = false;
@@ -352,11 +340,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        //Ensure the user has the correct role and access
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Consulting Doctor" });
+        //Load the current doctor's information and dashboard data
         await LoadCurrentDoctor();
         await LoadDashboardData();
     }
 
+    //Load the current doctor's information based on the logged-in user
     private async Task LoadCurrentDoctor()
     {
         try
@@ -375,6 +366,7 @@
         await LoadStatistics();
     }
 
+    //Load the list of patients assigned to this doctor as a consulting doctor
     private async Task LoadConsultingPatients()
     {
         loadingPatients = true;
@@ -382,7 +374,7 @@
         {
             if (currentDoctor != null)
             {
-                // Get all assignments where this doctor is the consulting doctor
+                //Get all assignments where this doctor is the consulting doctor
                 var assignments = await DoctorService.GetConsultingAssignmentsForDoctorAsync(currentDoctor.Doctor_ID);
                 
                 consultingPatients.Clear();
@@ -393,7 +385,7 @@
                     var patient = await DoctorService.GetPatientByIdAsync(assignment.Patient_ID);
                     if (patient != null)
                     {
-                        consultingPatients.Add(new ConsultingPatientInfo
+                        consultingPatients.Add(new ConsultingPatientInfoDTO
                         {
                             Patient_ID = assignment.Patient_ID,
                             Assigned_By = assignment.Assigned_By,
@@ -410,7 +402,7 @@
                             }
                         }
 
-                        // Get medical record count for this patient
+                        //Get medical record count for this patient
                         var recordCount = await DoctorService.GetMedicalRecordsCountByPatientAsync(assignment.Patient_ID);
                         patientRecordCounts[assignment.Patient_ID] = recordCount;
                     }
@@ -433,7 +425,8 @@
         totalMedicalRecordsViewed = patientRecordCounts.Values.Sum();
     }
 
-    private async Task ViewPatientMedicalRecords(ConsultingPatientInfo patientInfo)
+    //View medical records for a specific patient
+    private async Task ViewPatientMedicalRecords(ConsultingPatientInfoDTO patientInfo)
     {
         selectedPatientInfo = patientInfo;
         showViewRecordsDialog = true;
@@ -446,6 +439,7 @@
         {
             if (patientInfo.Patient != null)
             {
+                //Load medical records for the selected patient
                 var medicalRecords = await MedicalRecordsService.GetMedicalRecordsByPatientIdAsync(patientInfo.Patient_ID);
 
                 foreach (var record in medicalRecords)
@@ -454,6 +448,7 @@
 
                         try
                         {
+                            //Attempt to decrypt the medical record data
                             decryptedResult = DecryptMedicalRecord(record.Record_Data!);
                         }
                         catch
@@ -499,7 +494,7 @@
     {
         try
         {
-            string key = "HOSPITAL"; // 8-character key for DES
+            string key = "HOSPITAL"; //8-character key for DES
             return DESDecrypt(encryptedData, key);
         }
         catch (Exception ex)
