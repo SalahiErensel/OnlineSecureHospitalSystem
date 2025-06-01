@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using OnlineSecureHospitalSystem.Data.Models;
 
 namespace OnlineSecureHospitalSystem.Data
@@ -24,6 +23,10 @@ namespace OnlineSecureHospitalSystem.Data
         public DbSet<Assignments> Assignments { get; set; }
 
         public DbSet<MedicalRecords> MedicalRecords { get; set; }
+
+        public DbSet<Logs> Logs { get; set; }
+
+        //Creating default roles and admin user
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

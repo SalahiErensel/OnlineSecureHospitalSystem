@@ -104,18 +104,24 @@
 </MudContainer>
 
 @code {
+    //Creating lists to hold user data and DTOs
     public List<Users> userList = new List<Users>();
     public List<AllUsersDTO> allUsersDTO = new List<AllUsersDTO>();
+
+    //Flag to indicate loading state of grid
     private bool loading = true;
 
     protected override async Task OnInitializedAsync()
     {
+        //Check if the user has access to this page
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: false, allowedRoles: new[] { "Admin" });
 
         try
         {
+            //Fetch all users from the service 
             userList = await AdminService.GetAllUsersAsync();
 
+            //Map the user data to DTOs for display in the grid
             allUsersDTO = userList.Select(u => new AllUsersDTO
             {
                 First_Name = u.First_Name,
@@ -136,6 +142,7 @@
         }
     }
 
+    //When clicked to Add New User button, navigate to the user registration page
     private void AddUser()
     {
         NavigationManager.NavigateTo("/admin/register-user");

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace OnlineSecureHospitalSystem.Data.DTO
+﻿namespace OnlineSecureHospitalSystem.Data.DTO
 {
     public class UpdateProfileDTO
     {

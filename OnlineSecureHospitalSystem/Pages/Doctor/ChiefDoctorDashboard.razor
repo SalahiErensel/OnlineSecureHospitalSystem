@@ -142,19 +142,7 @@
                                         Sortable="false"
                                         Style="min-width: 200px;">
                             <CellTemplate>
-                                @if (context!.Item!.Is_Sensitive!.Value)
-                                {
-                                    <div Class="d-flex align-center">
-                                        <MudIcon Icon="@Icons.Material.Filled.Lock"
-                                                 Size="@Size.Small"
-                                                 Color="Color.Warning"
-                                                 Class="mr-1" />
-                                        <MudText Typo="Typo.caption" Class="text-muted">
-                                            Sensitive Information
-                                        </MudText>
-                                    </div>
-                                }
-                                else if (!string.IsNullOrEmpty(context.Item.Result))
+                                @if (!string.IsNullOrEmpty(context.Item.Result))
                                 {
                                     <MudText Typo="Typo.body2">
                                         @context.Item.Result
@@ -704,14 +692,14 @@
 
             var currentDoctor = await DoctorService.GetDoctorByUserIdAsync(AuthorizationService!.CurrentUser!.User_ID);
 
-            assignments.Curing_Doctor_ID = selectedDoctorId;
+            assignments.Doctor_ID = selectedDoctorId;
 
             assignments.Assigned_By = currentDoctor!.Doctor_ID;
             assignments.Patient_ID = selectedAppointment.Patient_ID;
 
             await DoctorService.AssignCuringDoctorAsync(assignments);
 
-            Snackbar.Add($"Curing Doctor {currentDoctor!.User!.First_Name} {currentDoctor.User.Last_Name} successfully assigned to patient {selectedAppointment!.Patient!.User!.First_Name} {selectedAppointment.Patient.User.Last_Name}", Severity.Success);
+            Snackbar.Add("Successfully Assigned");
 
             CloseAssignDialog();
 

@@ -628,7 +628,6 @@
                                                     Style="min-width: 140px;">
                                         <CellTemplate>
                                             <MudText Typo="Typo.body2">
-                                                @context.Item.Appointment_Date?.ToString("dd MMM yyyy")
                                                 @context.Item.Appointment_Date?.ToString("dd MMM yyyy HH:mm")
                                             </MudText>
                                         </CellTemplate>
@@ -1042,7 +1041,7 @@
         {
             if (currentDoctor != null)
             {
-                pendingAppointments = await DoctorService.GetAppointmentsByDoctorAndStatusAsync(currentDoctor.Doctor_ID, "Pending");
+                pendingAppointments = await DoctorService.GetAppointmentsByDoctorAndStatusAsync(currentDoctor.Doctor_ID, "Assigned");
             }
         }
         catch (Exception ex)
@@ -1514,10 +1513,12 @@
                         Doctor_Name = record.Doctor!.User!.First_Name!,
                         Doctor_Lastname = record.Doctor.User.Last_Name!,
                         Doctor_Specialization = record.Doctor.Specialization!,
+                        Patient_Firstname = record.Patient!.User!.First_Name!,
+                        Patient_Lastname = record.Patient.User.Last_Name!,  
                         Result = decryptedResult,
                         Is_Sensitive = record.Is_Sensitive,
                         Patient_Complaint = record.Appointment!.Reason!,
-                        Appointment_Date = record.Appointment.Appointment_Date,
+                        Appointment_Date = record.Appointment.Appointment_Date
                     });
                 }
             }
@@ -1576,8 +1577,8 @@
 
             var result = await DoctorService.AssignConsultingDoctorAsync(
                 selectedPatientForConsulting.Patient_ID,
-                consultingDoctor!.Doctor_ID,
-                currentDoctor.Doctor_ID
+                currentDoctor.Doctor_ID,
+                consultingDoctor!.Doctor_ID
             );
             if (!result)
             {

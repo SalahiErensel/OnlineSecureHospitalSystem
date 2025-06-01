@@ -10,7 +10,7 @@ namespace OnlineSecureHospitalSystem.Data.Models
         [ForeignKey(nameof(Patient))]
         public int Patient_ID { get; set; }
         [ForeignKey(nameof(CuringDoctor))]
-        public int Curing_Doctor_ID { get; set; }
+        public int Doctor_ID { get; set; }
         [ForeignKey(nameof(AssignedByDoctor))]
         public int Assigned_By { get; set; }
         public Patients? Patient { get; set; }

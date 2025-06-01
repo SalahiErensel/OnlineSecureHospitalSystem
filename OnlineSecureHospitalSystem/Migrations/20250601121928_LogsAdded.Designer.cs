@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OnlineSecureHospitalSystem.Data;
 
@@ -10,9 +11,11 @@ using OnlineSecureHospitalSystem.Data;
 namespace OnlineSecureHospitalSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250601121928_LogsAdded")]
+    partial class LogsAdded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
@@ -96,30 +99,6 @@ namespace OnlineSecureHospitalSystem.Migrations
                     b.HasIndex("User_ID");
 
                     b.ToTable("Doctors");
-                });
-
-            modelBuilder.Entity("OnlineSecureHospitalSystem.Data.Models.Logs", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<byte[]>("InputParameters")
-                        .HasColumnType("BLOB");
-
-                    b.Property<byte[]>("OutputParameters")
-                        .HasColumnType("BLOB");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Logs");
                 });
 
             modelBuilder.Entity("OnlineSecureHospitalSystem.Data.Models.MedicalRecords", b =>

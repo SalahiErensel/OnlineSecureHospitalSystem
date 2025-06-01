@@ -56,6 +56,12 @@
                         Dashboard
                     </MudNavLink>
                 }
+                @if (authorizationService.IsInRole("Consulting Doctor"))
+                {
+                    <MudNavLink Href="/doctor/consulting-dashboard" Icon="@Icons.Material.Filled.Apps" Match="NavLinkMatch.All">
+                        Dashboard
+                    </MudNavLink>
+                }
                 <MudNavLink Href="/" Icon="@Icons.Material.Filled.Logout" Match="NavLinkMatch.All">
                     Logout
                 </MudNavLink>

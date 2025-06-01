@@ -93,25 +93,35 @@
 </div>
 
 @code {
+
+    //Creating a new user model instance to bind to the form and getting the roles from the service
     private Users newUser = new();
     private List<Roles> roles = new();
+
+    //Variables to hold messages and their colors for user feedback
     private string message = string.Empty;
     private Color messageColor = Color.Default;
+
+    //Variables for additional fields based on user role
     private string specialization = string.Empty;
     private DateTime? dob = null;
 
     protected override async Task OnInitializedAsync()
     {
+        // Check if the user has access to this page
         await AccessControl.CheckAccessAsync(requireDefaultPasswordUpdated: true, allowedRoles: new[] { "Admin" });
 
+        //Initialize the new user and roles
         roles = await AuthenticationService.GetRolesAsync();
 
         newUser.Role_ID = 0;
     }
+
     private async Task RegisterUser()
     {
         try
         {
+            //Validate the form inputs
             if (newUser.Role_ID == 0)
             {
                 message = "Please select a role!";
@@ -119,6 +129,7 @@
                 return;
             }
 
+            //Registering the user through the AdminService
             var result = await AdminService.RegisterUserAsync(newUser, specialization, dob);
 
             if (result)
@@ -146,6 +157,7 @@
             StateHasChanged();
         }
     }
+    
     private async Task ClearMessages()
     {
         await Task.Delay(4000);
@@ -153,6 +165,8 @@
         StateHasChanged();
     }
 
+    //Helper properties to determine if the user is a doctor or patient based on their role
     private bool IsDoctorRole => new[] { 3, 4, 5 }.Contains(newUser.Role_ID);
+
     private bool IsPatientRole => newUser.Role_ID == 6;
 }
