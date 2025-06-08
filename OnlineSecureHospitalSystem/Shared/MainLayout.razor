@@ -2,12 +2,10 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject AuthorizationService authorizationService
-
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
-
 <MudLayout>
     @if (!IsLoginPage && !IsDefaultPasswordUser)
     {
@@ -68,7 +66,6 @@
             </MudNavMenu>
         </MudDrawer>
     }
-
     <MudAppBar Color="Color.Primary" Fixed="true">
         @if (!IsLoginPage && !IsDefaultPasswordUser)
         {
@@ -88,7 +85,6 @@
         @Body
     </MudMainContent>
 </MudLayout>
-
 @code {
     private bool _drawerOpen = false;
 
