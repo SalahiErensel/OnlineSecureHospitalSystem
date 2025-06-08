@@ -30,7 +30,7 @@ A secure web-based hospital management system built with Blazor Server and MudBl
 
 ## User Roles
 - **System Admin**: User management
-- **Receptionist**: Patient registration, appointments
+- **Receptionist**: Patient registration
 - **Chief Doctor**: Doctor-patient assignments, read access to records
 - **Curing Doctor**: Full medical record management
 - **Consulting Doctor**: Specialized consultations
